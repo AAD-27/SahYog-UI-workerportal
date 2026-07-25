@@ -1,0 +1,647 @@
+HOW SAHYOG should work?
+Project Overview
+Sahyog
+ is a full-stack citizen welfare management system that helps identify and recommend welfare benefits based on an individual's financial, household, and personal circumstances.
+The application follows a structured workflow similar to modern public assistance systems. Instead of asking citizens to fill separate forms for every welfare scheme, 
+Sahyog
+ collects information once and automatically evaluates eligibility for multiple programs.
+System Workflow
+Application Registration
+          ↓
+Data Collection
+          ↓
+Eligibility Determination
+          ↓
+Eligible Programs
+          ↓
+Citizen Dashboard
+Module 1 – Application Registration (AR)
+Purpose
+Create a citizen application and collect the minimum information required to begin the eligibility process.
+Information Collected
+Full Name
+Date of Birth / Age
+Gender
+Mobile Number
+Email (optional)
+Address
+State
+District
+PIN Code
+Aadhaar Number (optional for prototype)
+Program(s) the citizen wishes to apply for
+Output
+Application ID
+Citizen Profile
+Application Status = 
+Registered
+This module acts as the entry point into the system.
+Module 2 – Data Collection (DC)
+Purpose
+Collect the detailed information required for eligibility determination.
+This module also allows editing of information entered during Application Registration.
+Although the screen may look similar to Application Registration, it will be implemented using separate APIs because the business logic is different.
+Personal Information
+Disability Status
+Disability Type
+Medical Conditions
+Pregnancy Status (if applicable)
+Senior Citizen Status
+Household Information
+Number of Family Members
+Number of Children
+Ages of Children
+Number of Earning Members
+Financial Information
+Monthly Income
+Examples
+Salary
+Pension
+Business Income
+Rental Income
+Other Income
+The system automatically calculates:
+Annual Income
+=
+Monthly Income × 12
+Monthly Expenses
+The citizen enters monthly expenses such as:
+Electricity Bill
+Water Bill
+Gas Bill
+House Rent / EMI
+Loan Payments
+Education Fees
+Medical Expenses
+Grocery Expenses
+Other Essential Expenses
+The system automatically calculates:
+Total Monthly Expense
+Total Annual Expense
+Output
+A complete citizen financial profile is generated and stored for eligibility evaluation.
+Module 3 – Eligibility Determination (ED)
+Purpose
+This is the core engine of 
+Sahyog
+.
+The module evaluates the citizen profile against predefined business rules for each welfare program.
+The decision is entirely rule-based.
+No manual calculations are required by the user.
+Welfare Programs
+The first version of 
+Sahyog
+ will support the following programs:
+Food Coupons
+For families with low income and higher essential living expenses.
+Temporary Cash Assistance
+For citizens experiencing financial hardship who satisfy defined income and household criteria.
+Medical Insurance
+For citizens with low income, disabilities, significant medical expenses, or other qualifying conditions.
+Child Care Benefits
+For eligible households with young children that meet the program's eligibility rules.
+Utility Bills Assistance
+Provides assistance with essential utility expenses such as electricity and water bills for qualifying households.
+Eligibility Engine
+The Eligibility Engine evaluates each welfare program independently.
+Example flow:
+Citizen Profile
+        ↓
+Food Coupon Rules
+        ↓
+Eligible / Not Eligible
+Temporary Cash Rules
+        ↓
+Eligible / Not Eligible
+Medical Insurance Rules
+        ↓
+Eligible / Not Eligible
+Child Care Rules
+        ↓
+Eligible / Not Eligible
+Utility Assistance Rules
+        ↓
+Eligible / Not Eligible
+A citizen may qualify for:
+None of the programs
+One program
+Multiple programs simultaneously
+System Output
+Once evaluation is complete, 
+Sahyog
+ presents:
+Eligible Programs
+Food Coupons
+Medical Insurance
+Not Eligible
+Child Care Benefits
+No eligible child in the household.
+Temporary Cash Assistance
+Household income exceeds the program limit.
+This approach improves transparency by explaining the reasoning behind every decision.
+Proposed Technology Stack
+Frontend
+React.js
+Backend
+Java Spring Boot Microservices
+Database
+MySQL
+Architecture
+REST APIs
+Microservices
+Rule-Based Eligibility Engine
+Phase 1 Scope
+The initial version of 
+Sahyog
+ will focus on building a robust rule-based welfare eligibility platform. Citizens will register, provide detailed household and financial information, and receive transparent recommendations for five welfare programs—Food Coupons, Temporary Cash Assistance, Medical Insurance, Child Care Benefits, and Utility Bills Assistance. The emphasis is on accurate eligibility evaluation, modular microservices, and clear explanations for every recommendation, creating a strong foundation for future enhancements such as document verification, AI-assisted recommendations, and integration with government systems.
+Programs:
+The eligibility engine in 
+Sahyog
+ will follow a 
+rule-based evaluation model
+. Each welfare program will independently evaluate the citizen's profile, allowing an applicant to qualify for 
+multiple programs simultaneously
+. For example, a citizen may be eligible for 
+FSP, MCARE, and EAP
+ at the same time if they satisfy each program's criteria.
+The only exception is 
+CAP (Cash Assistance Program)
+, which should have stricter eligibility because it provides direct financial assistance.
+1. FSP – Food Support Program
+Objective
+Provide food assistance to households with limited financial capacity.
+Eligibility Rules
+Rule
+Condition
+FSP-01
+Annual Household Income ≤ ₹3,00,000
+FSP-02
+Monthly Food & Grocery Expenses ≥ 20% of Monthly Income
+FSP-03
+Monthly Essential Expenses (Food + Utilities) ≥ 40% of Monthly Income
+FSP-04
+Applicant must be an Indian resident.
+FSP-05
+Applicant must not have an active FSP application under review or already approved.
+Rationale
+Food assistance should focus on financial need rather than household size. Even a single individual with very low income may require assistance.
+2. CAP – Cash Assistance Program
+Objective
+Provide temporary financial assistance to citizens experiencing severe financial hardship.
+This program has the strictest eligibility criteria because it involves direct cash transfers.
+Eligibility Rules
+Rule
+Condition
+CAP-01
+Annual Household Income ≤ ₹2,00,000
+CAP-02
+Monthly Expenses ≥ 80% of Monthly Income
+CAP-03
+Applicant age between 18 and 60 years
+CAP-04
+Applicant must not own significant financial assets (Phase 2: asset verification).
+CAP-05
+Applicant must not already be receiving CAP benefits.
+CAP-06
+Applicant must satisfy at least one hardship condition: disability, major medical expenses, unemployment, or being the sole earning member.
+Rationale
+CAP is designed for citizens facing genuine financial distress and therefore combines income, expenditure, and hardship checks.
+3. MCARE – Medical Care and Assistance for Residents
+Objective
+Provide medical insurance support to citizens requiring healthcare assistance.
+Eligibility Rules
+Rule
+Condition
+MCARE-01
+Annual Household Income ≤ ₹5,00,000
+MCARE-02
+Applicant has a certified disability 
+or
+ a declared chronic/major medical condition.
+MCARE-03
+Monthly Medical Expenses ≥ 10% of Monthly Income.
+MCARE-04
+Applicant must be an Indian resident.
+MCARE-05
+Applicant must not already have an active MCARE application or approved coverage under the same program.
+Rationale
+Medical support should not depend on household size. Health-related need should be the primary driver of eligibility.
+4. CAPS – Child Assistance and Protection Scheme
+Objective
+Provide assistance to households responsible for young children.
+Eligibility Rules
+Rule
+Condition
+CAPS-01
+Household includes at least one child aged 5 years or younger.
+CAPS-02
+Annual Household Income ≤ ₹3,50,000
+CAPS-03
+Applicant is the parent or legal guardian of the child.
+CAPS-04
+Child resides in the applicant's household.
+CAPS-05
+Applicant must not already receive CAPS benefits for the same child.
+Rationale
+The program is child-focused, so eligibility depends on the presence of an eligible child rather than household size.
+5. EAP – Energy Assistance Program
+Objective
+Assist households struggling to pay essential utility bills.
+Eligibility Rules
+Rule
+Condition
+EAP-01
+Annual Household Income ≤ ₹3,00,000
+EAP-02
+Electricity and Water Bills together ≥ 15% of Monthly Income
+EAP-03
+Applicant is responsible for paying the utility bills (owner or tenant).
+EAP-04
+Applicant must be an Indian resident.
+EAP-05
+Applicant must not already have an active EAP application or approved benefit.
+General Eligibility Principles
+The eligibility engine should follow these principles:
+Every welfare program is evaluated independently.
+A citizen may qualify for multiple programs simultaneously.
+Each rule is evaluated separately, and the outcome of every rule is stored.
+The system provides a transparent explanation for every approval or rejection.
+Threshold values (income limits, expense percentages, etc.) should be configurable through the database rather than hardcoded in the application.
+This approach closely resembles real-world public benefit systems, where a single citizen profile is assessed independently against multiple program-specific rule sets. It also gives you flexibility to introduce new programs or modify eligibility thresholds without changing application logic.
+Module 1 – Application Registration (AR)
+The Application Registration module is responsible for creating a new welfare application. It captures only the citizen's basic information required to uniquely identify the applicant and the programs they wish to apply for. Once the application is submitted, an 
+Application Number
+ is generated. After submission, all AR screens become read-only to preserve the integrity of the registration data. Existing applications can be searched and edited until the final submission is completed.
+AR001 – Register Application
+Purpose
+Create a new application and generate a unique Application Number.
+Actions
+Create Application
+Save Draft
+Continue
+Information Captured
+First Name
+Middle Name
+Last Name
+Mobile Number
+Email Address
+AR002 – Register Address
+Purpose
+Capture the applicant's permanent and temporary addresses.
+Actions
+Add Address
+Edit Address
+Continue
+Address Types
+Permanent Address
+Temporary Address
+AR003 – Register Person
+Purpose
+Capture personal information for one or more individuals associated with the application.
+Actions
+Previous
+Next
+Screen elements:
+Applicatio
+/person type dropdown (default - primary applicant)
+First name mid name last same
+Dob
+Gender
+Caste/race
+religon
+Marital status
+Aadhar number
+Pan number (if available optional field)
+Passport number (if available optional field)
+Person Types
+Primary Applicant
+Child
+Parent
+Guardian
+Other Household Member
+AR004 – Register Program
+Purpose
+Allow the applicant to select one or more welfare programs.
+Actions
+Select Program
+Remove Program
+Continue
+Program Types
+FSP
+CAP
+MCARE
+CAPS
+EAP
+AR005 – Review & Submit Application
+Purpose
+Review all registration information before submission.
+Actions
+Previous
+next
+After submission:
+Application Number is generated.
+AR module becomes read-only.
+Application becomes available for Data Collection.
+this is special summary screen so we will show name age, address, programs 
+are you ready to submit this application popup should appear on submit as the AR flow for this app will go into read only mode
+Module 2 – Data Collection (DC)
+The Data Collection module allows case workers to update all information captured during Application Registration. During the first visit, the Application Number is converted into a Case Number. Every summary screen supports multiple entries and provides an 
+Add
+ action to open the corresponding details screen.
+All Details screens follow the same navigation pattern:
+Previous
+Cancel
+Next
+Moving between Previous and Next automatically saves the entered information.
+DC001 – Initiate Data Collection
+Purpose
+Start Data Collection and generate the Case Number.
+Actions
+Search Application
+Generate Case
+Continue
+DC002 – Application Information
+Purpose
+Review and update basic application information.
+Actions
+Edit Application
+Continue
+Information
+Applicant Name
+Mobile Number
+Email Address
+DC003 – Address Summary
+Purpose
+Display all addresses associated with the case.
+Actions
+Add Address
+Edit Address
+Delete Address
+Continue
+Address Types
+Permanent
+Temporary
+DC004 – Address Details
+Purpose
+Capture or modify a single address.
+Actions
+Previous
+Cancel
+Next
+DC005 – Person Summary
+Purpose
+Display all household members linked to the case.
+Actions
+Add Person
+Edit Person
+Delete Person
+Continue
+Person Types
+Primary Applicant
+Spouse
+Child
+Parent
+Guardian
+Other Household Member
+DC006 – Person Details
+Purpose
+Capture detailed information for a household member.
+Actions
+Previous
+Cancel
+Next
+Information
+Name
+Date of Birth
+Age
+Gender
+Aadhaar Number
+Citizenship
+Relationship to Applicant
+Marital Status
+DC007 – Program Summary
+Purpose
+Display all selected welfare programs.
+Actions
+Add Program
+Remove Program
+Continue
+DC008 – Program Details
+Purpose
+Select an individual welfare program.
+Actions
+Previous
+Cancel
+Next
+Program Types
+FSP
+CAP
+MCARE
+CAPS
+EAP
+DC009 – Income Summary
+Purpose
+Display all household income sources.
+Actions
+Add Income
+Edit Income
+Delete Income
+Continue
+DC010 – Income Details
+Purpose
+Capture a single income source.
+Actions
+Previous
+Cancel
+Next
+Income Types
+Salary
+Daily Wage
+Business Income
+Self Employment
+Agricultural Income
+Pension
+Rental Income
+Investment Income
+Interest Income
+Family Support
+Other Income
+DC011 – Expense Summary
+Purpose
+Display all household expenses.
+Actions
+Add Expense
+Edit Expense
+Delete Expense
+Continue
+DC012 – Expense Details
+Purpose
+Capture a household expense.
+Actions
+Previous
+Cancel
+Next
+Expense Types
+Housing
+House Rent
+Home Loan EMI
+Utilities
+Electricity Bill
+Water Bill
+Gas Bill
+Food
+Grocery
+Food Expenses
+Healthcare
+Medical Expenses
+Medicines
+Hospital Bills
+Education
+School Fees
+College Fees
+Books
+Transportation
+Financial
+Loan EMI
+Insurance Premium
+Other
+Internet
+Mobile
+Transportation
+Other Essential Expenses
+DC013 – Resource Summary
+Purpose
+Display all declared household resources and assets.
+Actions
+Add Resource
+Edit Resource
+Delete Resource
+Continue
+DC014 – Resource Details
+Purpose
+Capture an individual resource or asset.
+Actions
+Previous
+Cancel
+Next
+Resource Types
+Residential House
+Agricultural Land
+Commercial Property
+Vehicle
+Bank Balance
+Fixed Deposit
+Gold/Jewelry
+Investments
+Stocks/Mutual Funds
+Other Assets
+DC015 – Disability Summary
+Purpose
+Display all disabilities and medical conditions declared for household members.
+Actions
+Add Disability
+Edit Disability
+Delete Disability
+Continue
+DC016 – Disability Details
+Purpose
+Capture disability and medical information.
+Actions
+Previous
+Cancel
+Next
+Disability Types
+Blindness / Low Vision
+Deaf / Hearing Impairment
+Speech Impairment
+Locomotor Disability
+Intellectual Disability
+Autism Spectrum Disorder
+Cerebral Palsy
+Multiple Disabilities
+Mental Illness
+Other Disability
+Medical Condition Types
+Cancer
+Kidney Disease
+Heart Disease
+Diabetes
+Paralysis
+HIV/AIDS
+Chronic Respiratory Disease
+Pregnancy
+Other Chronic Illness
+Additional Information
+Disability Certificate
+Disability Percentage
+Monthly Medical Expenses
+DC017 – Review Case
+Purpose
+Review the complete case before eligibility determination.
+Actions
+Review
+Edit Any Section
+Complete Data Collection
+Run Eligibility
+Module 3 – Eligibility Determination (ED)
+ED001 – Run Eligibility
+Purpose
+Execute the rule engine against all selected programs.
+Actions
+Run Eligibility
+Re-run Eligibility
+View Rule Evaluation
+The system evaluates:
+FSP
+CAP
+MCARE
+CAPS
+EAP
+Each rule is evaluated independently and the results are stored for audit and transparency.
+ED002 – View Eligibility Results
+Purpose
+Display the final eligibility outcome for every selected program.
+Actions
+View Program Details
+View Rule Results
+Print Eligibility Report
+Information Displayed
+For each selected program:
+Program Name
+Eligibility Status
+Rules Passed
+Rules Failed
+Reason for Approval or Rejection
+This screen represents the final outcome of the 
+Sahyog
+ eligibility process and provides complete transparency into how every eligibility decision was reached.
+Total screens:
+Application Registration (5)
+AR001 – Register Application
+AR002 – Register Address
+AR003 – Register Person
+AR004 – Register Program
+AR005 – Review & Submit Application
+Data Collection (17)
+DC001 – Initiate Data Collection
+DC002 – Application Information
+DC003 – Address Summary
+DC004 – Address Details
+DC005 – Person Summary
+DC006 – Person Details
+DC007 – Program Summary
+DC008 – Program Details
+DC009 – Income Summary
+DC010 – Income Details
+DC011 – Expense Summary
+DC012 – Expense Details
+DC013 – Resource Summary
+DC014 – Resource Details
+DC015 – Disability Summary
+DC016 – Disability Details
+DC017 – Review Case
+Eligibility Determination (2)
+ED001 – Run Eligibility
+ED002 – View Eligibility Results
+Total Screens = 24
+ 

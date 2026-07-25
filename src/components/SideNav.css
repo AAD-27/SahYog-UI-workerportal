@@ -1,0 +1,116 @@
+.side-panel {
+  width: 320px;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .side-panel {
+    width: 280px;
+    padding: 24px 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .side-panel {
+    width: 240px;
+    padding: 16px 12px;
+  }
+  
+  .side-title {
+    font-size: 14px;
+  }
+  
+  .step-label {
+    font-size: 12px;
+  }
+  
+  .step-code {
+    font-size: 11px;
+  }
+  
+  .step-card {
+    padding: 12px;
+  }
+}
+
+.side-title {
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.step-card {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.step-card.active {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.18);
+}
+
+.step-number {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #2563eb;
+  color: white;
+  font-weight: 700;
+}
+
+.step-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.step-code {
+  font-size: 12px;
+  color: #475569;
+}
+
+.status-card {
+  margin-top: auto;
+  background: #fff;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
+}
+
+.status-title {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.status-value {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.status-tag {
+  color: #2563eb;
+  font-weight: 700;
+}
