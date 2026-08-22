@@ -29,7 +29,7 @@ function SideNav({ steps, activeStep, onStepSelect, applicationContext }) {
       </div>
       <div className="status-card">
         <div className="status-title">Application Number</div>
-        <div className="status-value">{applicationContext.applicationNumber || '-'}</div>
+        <div className="status-value">{applicationContext.applicationNumber || ''}</div>
         <div className="status-tag">Status: {applicationContext.status || 'Draft'}</div>
       </div>
     </aside>

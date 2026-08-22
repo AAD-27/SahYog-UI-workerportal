@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { initializeRegistration, saveRegistrationStep } from '../../services/appRegApi';
+import React, { useEffect, useRef, useState } from 'react';
+import { initializeProgram, saveProgram } from '../../services/appRegApi';
 import ResetButton from '../../common/components/ResetButton';
 import fspIcon from '../../assets/program-icons/fsp.png';
-import capIcon from '../../assets/program-icons/cap.jpg';
+import capIcon from '../../assets/program-icons/cap-rupee.png';
 import mcareIcon from '../../assets/program-icons/mcare.png';
-import capsIcon from '../../assets/program-icons/caps.jpg';
+import capsIcon from '../../assets/program-icons/caps-family.png';
 import eapIcon from '../../assets/program-icons/eap.png';
 
 const programOptions = [
@@ -25,30 +25,13 @@ const initialPrograms = {
 
 const programIcons = {
   FSP: fspIcon,
-  CAP: (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <rect x="3" y="6" width="18" height="12" rx="2" stroke="#fff" strokeWidth="2" />
-      <path d="M6 10h12" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-      <path d="M6 14h12" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="12" cy="12" r="2.5" stroke="#fff" strokeWidth="2" />
-      <path d="M10.5 11.5v1" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-      <path d="M13.5 11.5v1" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  ),
+  CAP: capIcon,
   MCARE: (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <path d="M11 4h2v6h6v2h-6v6h-2v-6H5v-2h6V4Z" fill="#fff" />
     </svg>
   ),
-  CAPS: (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <circle cx="7" cy="7" r="2.5" fill="#fff" />
-      <circle cx="17" cy="7" r="2.5" fill="#fff" />
-      <circle cx="12" cy="15.5" r="1.8" fill="#fff" />
-      <path d="M5 11.5c1.5 0 2-1 3-1s1.5 1 3 1 1.5-1 3-1 1.5 1 3 1" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-      <path d="M5 16h4v2H5zM15 16h4v2h-4z" fill="#fff" />
-    </svg>
-  ),
+  CAPS: capsIcon,
   EAP: (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <path d="M13 2L5 14h5l-1 8 9-12h-5l1-8Z" fill="#fff" />
@@ -70,9 +53,15 @@ function AR004RegisterProgram({ applicationContext, updateApplicationContext, se
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
   const [errors, setErrors] = useState('');
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (applicationContext.applicationId && applicationContext.data && Object.keys(applicationContext.data).length > 0) {
+    if (initializedRef.current) {
+      return;
+    }
+    initializedRef.current = true;
+
+    if (applicationContext.applicationNumber && applicationContext.data && Object.keys(applicationContext.data).length > 0) {
       const initial = { ...initialPrograms };
       const savedPrograms = applicationContext.data?.programs || [];
       savedPrograms.forEach((program) => {
@@ -87,16 +76,14 @@ function AR004RegisterProgram({ applicationContext, updateApplicationContext, se
 
     const loadInitial = async () => {
       try {
-        const result = await initializeRegistration();
+        const result = await initializeProgram({ applicationNum: applicationContext.applicationNumber || '' });
         updateApplicationContext({
-          applicationNumber: result.applicationNumber || applicationContext.applicationNumber,
-          applicationDate: result.applicationDate || applicationContext.applicationDate,
-          status: result.status || applicationContext.status,
-          data: result.data || applicationContext.data
+          applicationNumber: result.applicationNum || applicationContext.applicationNumber,
+          data: { ...applicationContext.data, programs: result.programs || [] }
         });
 
         const initial = { ...initialPrograms };
-        const savedPrograms = result.data?.programs || applicationContext.data?.programs || [];
+        const savedPrograms = result.programs || applicationContext.data?.programs || [];
         savedPrograms.forEach((program) => {
           if (initial.hasOwnProperty(program)) {
             initial[program] = true;
@@ -137,12 +124,11 @@ function AR004RegisterProgram({ applicationContext, updateApplicationContext, se
     setStatus('loading');
     setMessage('');
     try {
-      const result = await saveRegistrationStep({ pageId: 'AR004', programs: selectedPrograms });
+      const result = await saveProgram({ applicationNum: applicationContext.applicationNumber, pageId: 'AR004', programs: selectedPrograms });
       updateApplicationContext({
-        applicationNumber: result.applicationNumber || applicationContext.applicationNumber,
-        applicationDate: result.applicationDate || applicationContext.applicationDate,
+        applicationNumber: result.applicationNum || applicationContext.applicationNumber,
         status: result.status || applicationContext.status,
-        data: result.data || { ...applicationContext.data, programs: selectedPrograms }
+        data: { ...applicationContext.data, programs: selectedPrograms }
       });
       setStatus('success');
       setMessage('Program selection saved. Proceeding to review.');

@@ -1,40 +1,85 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { initializeRegistration, submitApplication } from '../../services/appRegApi';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { initializeReview, submitReview } from '../../services/appRegApi';
+import fspIcon from '../../assets/program-icons/fsp.png';
+import capIcon from '../../assets/program-icons/cap-rupee.png';
+import capsIcon from '../../assets/program-icons/caps-family.png';
 
-const programLabels = {
-  FSP: 'FSP – Food Support Program',
-  CAP: 'CAP – Cash Assistance Program',
-  MCARE: 'MCARE – Medical Care and Assistance for Residents',
-  CAPS: 'CAPS – Child Assistance and Protection Scheme',
-  EAP: 'EAP – Energy Assistance Program'
+const programDetails = {
+  FSP: {
+    label: 'FSP – Food Support Program',
+    description: 'Provide food assistance to households with limited financial capacity.',
+    color: '#16a34a',
+    icon: <img src={fspIcon} alt="" style={{ width: 36, height: 36, objectFit: 'contain', display: 'block' }} />
+  },
+  CAP: {
+    label: 'CAP – Cash Assistance Program',
+    description: 'Provide temporary financial assistance to citizens experiencing severe financial hardship.',
+    color: '#047857',
+    icon: <img src={capIcon} alt="" style={{ width: 36, height: 36, objectFit: 'contain', display: 'block' }} />
+  },
+  MCARE: {
+    label: 'MCARE – Medical Care and Assistance for Residents',
+    description: 'Provide medical insurance support to citizens requiring healthcare assistance.',
+    color: '#1d4ed8',
+    icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden><path d="M11 4h2v6h6v2h-6v6h-2v-6H5v-2h6V4Z" fill="#fff" /></svg>
+  },
+  CAPS: {
+    label: 'CAPS – Child Assistance and Protection Scheme',
+    description: 'Provide assistance to households responsible for young children.',
+    color: '#6d28d9',
+    icon: <img src={capsIcon} alt="" style={{ width: 36, height: 36, objectFit: 'contain', display: 'block' }} />
+  },
+  EAP: {
+    label: 'EAP – Energy Assistance Program',
+    description: 'Assist households struggling to pay essential utility bills.',
+    color: '#f97316',
+    icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden><path d="M13 2L5 14h5l-1 8 9-12h-5l1-8Z" fill="#fff" /></svg>
+  }
 };
 
 function AR005ReviewSubmit({ applicationContext, updateApplicationContext, setActiveStep }) {
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
+  const [reviewApplicant, setReviewApplicant] = useState(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (applicationContext.applicationId && applicationContext.data && Object.keys(applicationContext.data).length > 0) {
+    if (applicationContext.initAttempted || initializedRef.current) {
       return;
     }
 
     const loadInitial = async () => {
+      updateApplicationContext({ initAttempted: true });
+      if (applicationContext.applicationId && applicationContext.data && Object.keys(applicationContext.data).length > 0) {
+        return;
+      }
+
       try {
-        const result = await initializeRegistration();
+        const result = await initializeReview({ applicationNum: applicationContext.applicationNumber || '' });
+        if (!result) {
+          setMessage('Unable to load review data. Please refresh.');
+          return;
+        }
+
         updateApplicationContext({
-          applicationNumber: result.applicationNumber || applicationContext.applicationNumber,
-          applicationDate: result.applicationDate || applicationContext.applicationDate,
-          status: result.status || applicationContext.status,
-          data: result.data || applicationContext.data
+          initAttempted: true,
+          applicationNumber: result.applicationNum || applicationContext.applicationNumber,
+          data: {
+            ...applicationContext.data,
+            address: result.addressDetails || applicationContext.data?.address,
+            programs: result.programsSelected || applicationContext.data?.programs
+          }
         });
+        setReviewApplicant(result.applicantDetails || null);
       } catch (error) {
         setMessage('Unable to load review data. Please refresh.');
       }
     };
 
+    initializedRef.current = true;
     loadInitial();
-  }, [applicationContext.applicationId, applicationContext.data, applicationContext.applicationNumber, applicationContext.applicationDate, applicationContext.status, updateApplicationContext]);
+  }, [applicationContext.applicationNumber, applicationContext.applicationId, applicationContext.data, applicationContext.initAttempted, applicationContext.status, updateApplicationContext]);
 
   const person = applicationContext.data?.person || {};
   const address = applicationContext.data?.address || {};
@@ -55,13 +100,17 @@ function AR005ReviewSubmit({ applicationContext, updateApplicationContext, setAc
     setStatus('loading');
     setMessage('');
     try {
-      const payload = { pageId: 'AR005', ...applicationContext.data };
-      const result = await submitApplication(payload);
+      const payload = {
+        applicationNum: applicationContext.applicationNumber,
+        pageId: 'AR005',
+        ...applicationContext.data,
+        programs: applicationContext.data?.programs || []
+      };
+      const result = await submitReview(payload);
       updateApplicationContext({
-        applicationNumber: result.applicationNumber || applicationContext.applicationNumber,
-        applicationDate: result.applicationDate || applicationContext.applicationDate,
+        applicationNumber: result.applicationNum || applicationContext.applicationNumber,
         status: result.status || 'Submitted',
-        data: result.data || applicationContext.data
+        data: applicationContext.data
       });
       setStatus('success');
       setMessage('Application submitted successfully. The AR flow is now read-only.');
@@ -92,15 +141,15 @@ function AR005ReviewSubmit({ applicationContext, updateApplicationContext, setAc
         <div className="field-row">
           <div className="field-group">
             <div className="field-label">Name</div>
-            <div>{`${person.firstName || '-'} ${person.middleName || ''} ${person.lastName || ''}`.trim()}</div>
+            <div>{reviewApplicant?.name || `${person.firstName || '-'} ${person.middleName || ''} ${person.lastName || ''}`.trim()}</div>
           </div>
           <div className="field-group">
             <div className="field-label">Age</div>
-            <div>{person.dob ? `${age} Years` : '-'}</div>
+            <div>{reviewApplicant?.age != null ? `${reviewApplicant.age} Years` : person.dob ? `${age} Years` : '-'}</div>
           </div>
           <div className="field-group">
             <div className="field-label">Gender</div>
-            <div>{person.gender || '-'}</div>
+            <div>{reviewApplicant?.gender || person.gender || '-'}</div>
           </div>
         </div>
       </div>
@@ -134,11 +183,28 @@ function AR005ReviewSubmit({ applicationContext, updateApplicationContext, setAc
         </div>
 
         <div style={{ display: 'grid', gap: 14 }}>
-          {selectedPrograms.map((program) => (
-            <div key={program} className="section-card" style={{ padding: 16, background: '#f8fafb', borderColor: '#e2e8f0' }}>
-              <div style={{ fontWeight: 700 }}>{programLabels[program] || program}</div>
+          {selectedPrograms.map((program) => {
+            const details = programDetails[program];
+            if (!details) {
+              return <div key={program} className="section-card" style={{ padding: 16, background: '#f8fafb', borderColor: '#e2e8f0', fontWeight: 700 }}>{program}</div>;
+            }
+
+            return (
+            <div key={program} className="section-card" style={{ margin: 0, borderColor: '#2563eb', background: '#eff6ff', padding: 18 }}>
+              <div style={{ position: 'relative', paddingLeft: 14, display: 'grid', gridTemplateColumns: 'auto 56px 1fr', gap: 16, alignItems: 'center' }}>
+                <div style={{ position: 'absolute', left: 11, top: 0, bottom: 0, width: 1, background: '#e2e8f0' }} />
+                <input type="checkbox" checked readOnly aria-label={`${details.label} selected`} style={{ width: 20, height: 20, accentColor: '#2563eb', zIndex: 1 }} />
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: details.color, display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
+                  {details.icon}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, marginBottom: 6, fontSize: 15 }}>{details.label}</div>
+                  <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.5 }}>{details.description}</div>
+                </div>
+              </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

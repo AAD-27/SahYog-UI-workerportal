@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { initializeRegistration, saveRegistrationStep } from '../../services/appRegApi';
+import React, { useEffect, useRef, useState } from 'react';
+import { initializeAddress, saveAddress } from '../../services/appRegApi';
+import { filterNumericInput, validatePinCode } from '../../utils/validation';
 import ResetButton from '../../common/components/ResetButton';
 
 const initialAddress = {
@@ -8,14 +9,16 @@ const initialAddress = {
     line2: '',
     city: '',
     state: '',
-    country: ''
+    country: '',
+    pincode: ''
   },
   temporary: {
     line1: '',
     line2: '',
     city: '',
     state: '',
-    country: ''
+    country: '',
+    pincode: ''
   },
   sameAsPermanent: false
 };
@@ -29,39 +32,51 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
     permanent: {},
     temporary: {}
   });
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (applicationContext.applicationId && applicationContext.data && Object.keys(applicationContext.data).length > 0) {
-      const addressData = applicationContext.data?.address || initialAddress;
-      setForm(addressData);
-      setInitialData(addressData);
+    if (applicationContext.initAttempted || initializedRef.current) {
+      if (applicationContext.data && Object.keys(applicationContext.data).length > 0) {
+        const addressData = applicationContext.data?.address || initialAddress;
+        setForm(addressData);
+        setInitialData(addressData);
+      }
       return;
     }
 
     const loadInitial = async () => {
+      updateApplicationContext({ initAttempted: true });
       try {
-        const result = await initializeRegistration();
+        const result = await initializeAddress({ applicationNum: applicationContext.applicationNumber || '' });
+        if (!result) {
+          setMessage('Unable to load address data. Please refresh.');
+          return;
+        }
+
         updateApplicationContext({
-          applicationNumber: result.applicationNumber || applicationContext.applicationNumber,
-          applicationDate: result.applicationDate || applicationContext.applicationDate,
-          status: result.status || applicationContext.status,
-          data: result.data || applicationContext.data
+          initAttempted: true,
+          applicationNumber: result.applicationNum || applicationContext.applicationNumber,
+          data: { ...applicationContext.data, address: result.address || initialAddress }
         });
 
-        const addressData = result.data?.address || initialAddress;
+        const addressData = result.address || initialAddress;
         setForm(addressData);
         setInitialData(addressData);
       } catch (error) {
-        setMessage('Unable to load address data.');
+        setMessage('Unable to load address data. Please refresh.');
       }
     };
 
+    initializedRef.current = true;
     loadInitial();
-  }, [applicationContext.applicationId, applicationContext.data, applicationContext.applicationNumber, applicationContext.applicationDate, applicationContext.status, updateApplicationContext]);
+  }, [applicationContext.applicationNumber, applicationContext.data, applicationContext.initAttempted, applicationContext.status, updateApplicationContext]);
 
   const validateField = (section, field, value) => {
     if (['line2'].includes(field)) {
       return undefined;
+    }
+    if (field === 'pincode') {
+      return validatePinCode(value);
     }
     if (!value.trim()) {
       return 'This field is required.';
@@ -70,7 +85,10 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
   };
 
   const updateField = (section, field) => (event) => {
-    const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+    let value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+    if (field === 'pincode') {
+      value = filterNumericInput(value).slice(0, 6);
+    }
     setForm((prev) => {
       if (section === 'sameAsPermanent') {
         const temporary = value ? { ...prev.permanent } : prev.temporary;
@@ -123,14 +141,16 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
         line2: undefined,
         city: validateField('permanent', 'city', form.permanent.city),
         state: validateField('permanent', 'state', form.permanent.state),
-        country: validateField('permanent', 'country', form.permanent.country)
+        country: validateField('permanent', 'country', form.permanent.country),
+        pincode: validateField('permanent', 'pincode', form.permanent.pincode)
       },
       temporary: {
         line1: undefined,
         line2: undefined,
         city: undefined,
         state: undefined,
-        country: undefined
+        country: undefined,
+        pincode: undefined
       }
     };
 
@@ -139,6 +159,7 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
       nextErrors.temporary.city = validateField('temporary', 'city', form.temporary.city);
       nextErrors.temporary.state = validateField('temporary', 'state', form.temporary.state);
       nextErrors.temporary.country = validateField('temporary', 'country', form.temporary.country);
+      nextErrors.temporary.pincode = validateField('temporary', 'pincode', form.temporary.pincode);
     }
 
     const filtered = {
@@ -176,13 +197,12 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
     setStatus('loading');
     setMessage('');
     try {
-      const result = await saveRegistrationStep({ pageId: 'AR002', address: form });
+      const result = await saveAddress({ applicationNum: applicationContext.applicationNumber, pageId: 'AR002', address: form });
 
       updateApplicationContext({
-        applicationNumber: result.applicationNumber || applicationContext.applicationNumber,
-        applicationDate: result.applicationDate || applicationContext.applicationDate,
+        applicationNumber: result.applicationNum || applicationContext.applicationNumber,
         status: result.status || applicationContext.status,
-        data: result.data || { ...applicationContext.data, address: form }
+        data: { ...applicationContext.data, address: form }
       });
       setStatus('success');
       setMessage('Address saved successfully. Proceeding to Register Person.');
@@ -198,7 +218,8 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
     form.permanent.city.trim() &&
     form.permanent.state.trim() &&
     form.permanent.country.trim() &&
-    (form.sameAsPermanent || (form.temporary.line1.trim() && form.temporary.city.trim() && form.temporary.state.trim() && form.temporary.country.trim()));
+    !validatePinCode(form.permanent.pincode) &&
+    (form.sameAsPermanent || (form.temporary.line1.trim() && form.temporary.city.trim() && form.temporary.state.trim() && form.temporary.country.trim() && !validatePinCode(form.temporary.pincode)));
 
   return (
     <div className="card">
@@ -275,7 +296,19 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
             />
             {errors.permanent.country && <span className="field-error">{errors.permanent.country}</span>}
           </div>
-          <div />
+          <div className="field-group">
+            <label className="field-label" htmlFor="permPincode">PIN Code *</label>
+            <input
+              id="permPincode"
+              className="field-input"
+              inputMode="numeric"
+              maxLength="6"
+              value={form.permanent.pincode}
+              onChange={updateField('permanent', 'pincode')}
+              placeholder="Enter 6-digit PIN code"
+            />
+            {errors.permanent.pincode && <span className="field-error">{errors.permanent.pincode}</span>}
+          </div>
         </div>
       </div>
 
@@ -360,7 +393,20 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
             />
             {errors.temporary.country && !form.sameAsPermanent && <span className="field-error">{errors.temporary.country}</span>}
           </div>
-          <div />
+          <div className="field-group">
+            <label className="field-label" htmlFor="tempPincode">PIN Code *</label>
+            <input
+              id="tempPincode"
+              className="field-input"
+              inputMode="numeric"
+              maxLength="6"
+              value={form.temporary.pincode}
+              onChange={updateField('temporary', 'pincode')}
+              placeholder="Enter 6-digit PIN code"
+              disabled={form.sameAsPermanent}
+            />
+            {errors.temporary.pincode && !form.sameAsPermanent && <span className="field-error">{errors.temporary.pincode}</span>}
+          </div>
         </div>
       </div>
 

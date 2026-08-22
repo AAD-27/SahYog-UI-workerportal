@@ -16,6 +16,11 @@ export const passportPattern = /^[A-Z0-9]{6,9}$/i;
  * @returns {string|undefined} - Error message or undefined if valid
  */
 export const validateField = (field, value, options = {}) => {
+  const nameFields = ['firstName', 'middleName', 'lastName'];
+  if (nameFields.includes(field) && options.maxLength == null) {
+    options = { ...options, maxLength: 50 };
+  }
+
   // Required field check
   if (options.required && !String(value).trim()) {
     return options.requiredMsg || `${options.label || field} is required.`;
@@ -39,8 +44,12 @@ export const validateField = (field, value, options = {}) => {
       return validateDOB(value, options);
     case 'pinCode':
       return validatePinCode(value, options);
+    case 'firstName':
+    case 'middleName':
+    case 'lastName':
+      return validateTextField(value, options);
     default:
-      return undefined;
+      return validateTextField(value, options);
   }
 };
 
@@ -113,7 +122,10 @@ export const validatePassport = (value, options = {}) => {
  */
 export const validateEmail = (value, options = {}) => {
   if (!value.trim()) {
-    return undefined; // Email is optional
+    if (options.required) {
+      return options.requiredMsg || 'Email address is required.';
+    }
+    return undefined; // Email is optional unless marked required
   }
   if (!emailPattern.test(value.trim())) {
     return 'Enter a valid email address.';

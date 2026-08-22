@@ -2,9 +2,9 @@
   "name": "sahyog-ui",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:5000",
+  "proxy": "http://localhost:8090",
   "scripts": {
-    "start": "concurrently \"cross-env PORT=4200 react-scripts start\" \"npm run start:server\"",
+    "start": "cross-env PORT=4200 react-scripts start",
     "start:react": "cross-env PORT=4200 react-scripts start",
     "start:server": "node server/index.js",
     "build": "react-scripts build",

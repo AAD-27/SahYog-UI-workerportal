@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { initializeRegistration, saveRegistrationStep } from '../../services/appRegApi';
+import React, { useEffect, useRef, useState } from 'react';
+import { initializeApplication, saveApplication } from '../../services/appRegApi';
 import { validateField, filterNumericInput } from '../../utils/validation';
 import ResetButton from '../../common/components/ResetButton';
 
@@ -20,40 +20,52 @@ function AR001RegisterApplication({ applicationContext, updateApplicationContext
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
   const [errors, setErrors] = useState({});
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (applicationContext.applicationId && applicationContext.data && Object.keys(applicationContext.data).length > 0) {
-      const dataFromContext = {
-        firstName: applicationContext.data.firstName || '',
-        middleName: applicationContext.data.middleName || '',
-        lastName: applicationContext.data.lastName || '',
-        mobileNumber: applicationContext.data.mobileNumber || '',
-        emailAddress: applicationContext.data.emailAddress || '',
-        applicationDate: applicationContext.applicationDate || applicationContext.data?.applicationDate || getToday()
-      };
-      setForm(dataFromContext);
-      setInitialData(dataFromContext);
+    if (applicationContext.initAttempted) {
       return;
     }
 
+    if (initializedRef.current) {
+      return;
+    }
+    initializedRef.current = true;
+
     const loadInitial = async () => {
+      updateApplicationContext({ initAttempted: true });
+
+      if (applicationContext.applicationId !== null && applicationContext.applicationId !== undefined) {
+        const dataFromContext = {
+          firstName: applicationContext.data?.firstName || '',
+          middleName: applicationContext.data?.middleName || '',
+          lastName: applicationContext.data?.lastName || '',
+          mobileNumber: applicationContext.data?.mobileNumber || '',
+          emailAddress: applicationContext.data?.emailAddress || '',
+          applicationDate: applicationContext.applicationDate || applicationContext.data?.applicationDate || getToday()
+        };
+        setForm(dataFromContext);
+        setInitialData(dataFromContext);
+        return;
+      }
+
       try {
-        const result = await initializeRegistration();
+        const result = await initializeApplication({ applicationNum: '' });
         const initialFormData = {
-          firstName: result.data?.firstName || '',
-          middleName: result.data?.middleName || '',
-          lastName: result.data?.lastName || '',
-          mobileNumber: result.data?.mobileNumber || '',
-          emailAddress: result.data?.emailAddress || '',
-          applicationDate: result.applicationDate || result.data?.applicationDate || getToday()
+          firstName: result.firstName || '',
+          middleName: result.middleName || '',
+          lastName: result.lastName || '',
+          mobileNumber: result.mobileNumber || '',
+          emailAddress: result.emailAddress || '',
+          applicationDate: result.applicationDate || getToday()
         };
         
         updateApplicationContext({
-          applicationId: result.id,
-          applicationNumber: result.applicationNumber,
+          initAttempted: true,
+          applicationNumber: result.applicationNum || '',
           applicationDate: result.applicationDate || getToday(),
-          status: result.status || 'Draft',
-          data: result.data || {}
+          status: 'Draft',
+          data: result.found ? initialFormData : {}
         });
         setForm(initialFormData);
         setInitialData(initialFormData);
@@ -63,10 +75,26 @@ function AR001RegisterApplication({ applicationContext, updateApplicationContext
     };
 
     loadInitial();
-  }, [applicationContext.applicationId, applicationContext.applicationDate, applicationContext.data, updateApplicationContext]);
+  }, []);
 
   const handleValidateField = (field, value) => {
-    return validateField(field, value);
+    const requiredFields = {
+      firstName: true,
+      lastName: true,
+      mobileNumber: true,
+      applicationDate: true
+    };
+    const maxLengthFields = {
+      firstName: 50,
+      middleName: 50,
+      lastName: 50
+    };
+
+    return validateField(field, value, {
+      required: requiredFields[field] || false,
+      maxLength: maxLengthFields[field],
+      label: field === 'firstName' ? 'First name' : field === 'lastName' ? 'Last name' : field === 'mobileNumber' ? 'Mobile number' : field === 'applicationDate' ? 'Application date' : field
+    });
   };
 
   const updateField = (field) => (event) => {
@@ -101,16 +129,22 @@ function AR001RegisterApplication({ applicationContext, updateApplicationContext
     return Object.keys(filtered).length === 0;
   };
 
+  const requiredFieldsFilled =
+    form.firstName.trim() !== '' &&
+    form.lastName.trim() !== '' &&
+    form.mobileNumber.trim() !== '' &&
+    form.applicationDate.trim() !== '';
+
   const today = getToday();
   const applicationDate = applicationContext.applicationDate || form.applicationDate || today;
   const displayApplicationDate = applicationDate > today ? today : applicationDate;
 
   const isValid =
-    handleValidateField('firstName', form.firstName) === undefined &&
-    handleValidateField('lastName', form.lastName) === undefined &&
-    handleValidateField('mobileNumber', form.mobileNumber) === undefined &&
-    handleValidateField('emailAddress', form.emailAddress) === undefined &&
-    handleValidateField('applicationDate', form.applicationDate) === undefined;
+    requiredFieldsFilled &&
+    !validateField('firstName', form.firstName, { required: true, maxLength: 50, label: 'First name' }) &&
+    !validateField('lastName', form.lastName, { required: true, maxLength: 50, label: 'Last name' }) &&
+    !validateField('mobileNumber', form.mobileNumber, { required: true, label: 'Mobile number' }) &&
+    !validateField('applicationDate', form.applicationDate, { required: true, label: 'Application date' });
 
   const handleNext = async () => {
     if (!validateForm()) {
@@ -122,14 +156,14 @@ function AR001RegisterApplication({ applicationContext, updateApplicationContext
     setStatus('loading');
     setMessage('');
     try {
-      const payload = { pageId: 'AR001', ...form };
-      const result = await saveRegistrationStep(payload);
+      const payload = { applicationNum: applicationContext.applicationNumber || '', pageId: 'AR001', ...form };
+      const result = await saveApplication(payload);
 
       updateApplicationContext({
-        applicationNumber: result.applicationNumber || applicationContext.applicationNumber,
+        applicationNumber: result.applicationNum || applicationContext.applicationNumber,
         applicationDate: result.applicationDate || applicationContext.applicationDate,
         status: result.status || 'Draft',
-        data: result.data || { ...applicationContext.data, ...form }
+        data: { ...applicationContext.data, ...form }
       });
       setStatus('success');
       setMessage('Application data saved. Proceeding to address registration.');

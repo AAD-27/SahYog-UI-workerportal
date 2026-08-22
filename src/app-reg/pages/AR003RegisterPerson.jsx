@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { initializeRegistration, saveRegistrationStep } from '../../services/appRegApi';
+import React, { useEffect, useRef, useState } from 'react';
+import { initializePerson, savePerson } from '../../services/appRegApi';
 import { validateField, filterNumericInput } from '../../utils/validation';
 import ResetButton from '../../common/components/ResetButton';
 
@@ -30,25 +30,46 @@ function AR003RegisterPerson({ applicationContext, updateApplicationContext, set
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (applicationContext.applicationId && applicationContext.data && Object.keys(applicationContext.data).length > 0) {
-      const personData = applicationContext.data?.person || initialState;
-      setForm(personData);
-      setInitialData(personData);
+    if (applicationContext.initAttempted || initializedRef.current) {
+      if (applicationContext.data && Object.keys(applicationContext.data).length > 0) {
+        const personFromContext = applicationContext.data?.person;
+        const personData = personFromContext || {
+          ...initialState,
+          firstName: applicationContext.data?.firstName || '',
+          middleName: applicationContext.data?.middleName || '',
+          lastName: applicationContext.data?.lastName || ''
+        };
+        setForm(personData);
+        setInitialData(personData);
+      }
       return;
     }
 
     const loadInitial = async () => {
+      updateApplicationContext({ initAttempted: true });
       try {
-        const result = await initializeRegistration();
+        const result = await initializePerson({ applicationNum: applicationContext.applicationNumber || '' });
+        if (!result) {
+          setMessage('Unable to load person registration data. Please refresh.');
+          return;
+        }
+
         updateApplicationContext({
-          applicationNumber: result.applicationNumber || applicationContext.applicationNumber,
-          applicationDate: result.applicationDate || applicationContext.applicationDate,
-          status: result.status || applicationContext.status,
-          data: result.data || applicationContext.data
+          initAttempted: true,
+          applicationNumber: result.applicationNum || applicationContext.applicationNumber,
+          data: { ...applicationContext.data, person: result.person || initialState }
         });
-        const personData = result.data?.person || initialState;
+
+        const personFromResult = result.person;
+        const personData = personFromResult || {
+          ...initialState,
+          firstName: applicationContext.data?.firstName || '',
+          middleName: applicationContext.data?.middleName || '',
+          lastName: applicationContext.data?.lastName || ''
+        };
         setForm(personData);
         setInitialData(personData);
       } catch (error) {
@@ -56,8 +77,9 @@ function AR003RegisterPerson({ applicationContext, updateApplicationContext, set
       }
     };
 
+    initializedRef.current = true;
     loadInitial();
-  }, [applicationContext.applicationId, applicationContext.data, applicationContext.applicationNumber, applicationContext.applicationDate, applicationContext.status, updateApplicationContext]);
+  }, [applicationContext.applicationNumber, applicationContext.data, applicationContext.initAttempted, applicationContext.status, applicationContext.applicationId, updateApplicationContext]);
 
   const handleValidateField = (field, value) => {
     return validateField(field, value);
@@ -125,12 +147,11 @@ function AR003RegisterPerson({ applicationContext, updateApplicationContext, set
     setStatus('loading');
     setMessage('');
     try {
-      const result = await saveRegistrationStep({ pageId: 'AR003', person: form });
+      const result = await savePerson({ applicationNum: applicationContext.applicationNumber, pageId: 'AR003', person: form });
       updateApplicationContext({
-        applicationNumber: result.applicationNumber || applicationContext.applicationNumber,
-        applicationDate: result.applicationDate || applicationContext.applicationDate,
+        applicationNumber: result.applicationNum || applicationContext.applicationNumber,
         status: result.status || 'Draft',
-        data: result.data || { ...applicationContext.data, person: form }
+        data: { ...applicationContext.data, person: form }
       });
       setStatus('success');
       setMessage('Person details saved. Proceeding to program registration.');

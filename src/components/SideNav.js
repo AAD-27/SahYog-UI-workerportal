@@ -26,7 +26,7 @@ function SideNav() {
       </div>
       <div className="status-card">
         <div className="status-title">Application Number</div>
-        <div className="status-value">-</div>
+        <div className="status-value"></div>
         <div className="status-tag">Status: Draft</div>
       </div>
     </aside>

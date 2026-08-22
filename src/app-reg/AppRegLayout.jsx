@@ -35,7 +35,8 @@ function AppRegLayout() {
   const [applicationContext, setApplicationContext] = useState({
     applicationId: null,
     applicationNumber: '',
-    status: 'Draft'
+    status: 'Draft',
+    initAttempted: false
   });
 
   useEffect(() => {
