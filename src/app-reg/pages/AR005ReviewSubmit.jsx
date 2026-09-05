@@ -56,7 +56,7 @@ function AR005ReviewSubmit({ applicationContext, updateApplicationContext, setAc
       }
 
       try {
-        const result = await initializeReview({ applicationNum: applicationContext.applicationNumber || '' });
+        const result = await initializeReview({ appOrCaseNum: applicationContext.applicationNumber || '' });
         if (!result) {
           setMessage('Unable to load review data. Please refresh.');
           return;
@@ -101,7 +101,7 @@ function AR005ReviewSubmit({ applicationContext, updateApplicationContext, setAc
     setMessage('');
     try {
       const payload = {
-        applicationNum: applicationContext.applicationNumber,
+        appOrCaseNum: applicationContext.applicationNumber,
         pageId: 'AR005',
         ...applicationContext.data,
         programs: applicationContext.data?.programs || []

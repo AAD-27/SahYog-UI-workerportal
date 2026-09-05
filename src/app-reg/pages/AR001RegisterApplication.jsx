@@ -50,7 +50,7 @@ function AR001RegisterApplication({ applicationContext, updateApplicationContext
       }
 
       try {
-        const result = await initializeApplication({ applicationNum: '' });
+        const result = await initializeApplication({ appOrCaseNum: '' });
         const initialFormData = {
           firstName: result.firstName || '',
           middleName: result.middleName || '',
@@ -156,7 +156,7 @@ function AR001RegisterApplication({ applicationContext, updateApplicationContext
     setStatus('loading');
     setMessage('');
     try {
-      const payload = { applicationNum: applicationContext.applicationNumber || '', pageId: 'AR001', ...form };
+      const payload = { appOrCaseNum: applicationContext.applicationNumber || '', pageId: 'AR001', ...form };
       const result = await saveApplication(payload);
 
       updateApplicationContext({

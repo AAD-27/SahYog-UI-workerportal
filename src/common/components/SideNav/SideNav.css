@@ -1,5 +1,9 @@
 .side-panel {
   width: 320px;
+  flex: 0 0 320px;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 32px 24px;
   display: flex;
   flex-direction: column;
@@ -41,6 +45,23 @@
 
 .step-card:hover {
   border-color: #cbd5e1;
+}
+
+@media (max-width: 768px) {
+  .side-panel {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+}
+
+.step-card-disabled {
+  cursor: not-allowed;
+  opacity: 0.78;
+}
+
+.step-card-disabled:hover {
+  border-color: transparent;
 }
 
 .step-number {

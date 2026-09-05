@@ -5,8 +5,8 @@
 
 // Pattern definitions
 export const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-export const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i;
-export const passportPattern = /^[A-Z0-9]{6,9}$/i;
+export const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+export const passportPattern = /^[A-Z][0-9]{7}$/;
 
 /**
  * Validate individual fields based on field type and value
@@ -86,7 +86,7 @@ export const validateAadhar = (value, options = {}) => {
 };
 
 /**
- * Validate PAN number (10 characters: AAAAA0000A)
+ * Validate PAN number (10 characters: XXXXX0000X)
  */
 export const validatePan = (value, options = {}) => {
   if (!value.trim()) {
@@ -95,24 +95,21 @@ export const validatePan = (value, options = {}) => {
   if (value.length > 10) {
     return 'PAN number must not exceed 10 characters.';
   }
-  if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i.test(value.trim())) {
-    return 'Enter a valid PAN number (format: AAAAA0000A - 10 characters).';
+  if (!panPattern.test(value.trim())) {
+    return 'Enter a valid PAN number in XXXXX0000X format (for example, ABCDE1111Q).';
   }
   return undefined;
 };
 
 /**
- * Validate Passport number (6-9 alphanumeric characters)
+ * Validate Passport number (8 characters: X0000000)
  */
 export const validatePassport = (value, options = {}) => {
   if (!value.trim()) {
     return undefined; // Passport is optional
   }
-  if (value.length < 6 || value.length > 9) {
-    return 'Passport number must be 6-9 characters.';
-  }
-  if (!/^[A-Z0-9]{6,9}$/i.test(value.trim())) {
-    return 'Enter a valid passport number (6-9 alphanumeric characters).';
+  if (!passportPattern.test(value.trim())) {
+    return 'Enter a valid passport number in X0000000 format (one letter followed by seven digits).';
   }
   return undefined;
 };

@@ -51,7 +51,7 @@ function AR003RegisterPerson({ applicationContext, updateApplicationContext, set
     const loadInitial = async () => {
       updateApplicationContext({ initAttempted: true });
       try {
-        const result = await initializePerson({ applicationNum: applicationContext.applicationNumber || '' });
+        const result = await initializePerson({ appOrCaseNum: applicationContext.applicationNumber || '' });
         if (!result) {
           setMessage('Unable to load person registration data. Please refresh.');
           return;
@@ -91,6 +91,9 @@ function AR003RegisterPerson({ applicationContext, updateApplicationContext, set
     // Apply numeric filter for Aadhaar number
     if (field === 'aadharNumber') {
       value = filterNumericInput(value).slice(0, 12);
+    }
+    if (field === 'panNumber' || field === 'passportNumber') {
+      value = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     }
     
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -147,7 +150,7 @@ function AR003RegisterPerson({ applicationContext, updateApplicationContext, set
     setStatus('loading');
     setMessage('');
     try {
-      const result = await savePerson({ applicationNum: applicationContext.applicationNumber, pageId: 'AR003', person: form });
+      const result = await savePerson({ appOrCaseNum: applicationContext.applicationNumber, pageId: 'AR003', person: form });
       updateApplicationContext({
         applicationNumber: result.applicationNum || applicationContext.applicationNumber,
         status: result.status || 'Draft',
@@ -278,7 +281,7 @@ function AR003RegisterPerson({ applicationContext, updateApplicationContext, set
               value={form.panNumber}
               onChange={updateField('panNumber')}
               maxLength="10"
-              placeholder="Enter PAN number (10 characters)"
+              placeholder="XXXXX0000X (for example, ABCDE1111Q)"
             />
             {errors.panNumber && <span className="field-error">{errors.panNumber}</span>}
           </div>
@@ -289,8 +292,8 @@ function AR003RegisterPerson({ applicationContext, updateApplicationContext, set
               className="field-input"
               value={form.passportNumber}
               onChange={updateField('passportNumber')}
-              maxLength="9"
-              placeholder="Enter passport number (6-9 characters)"
+              maxLength="8"
+              placeholder="X0000000 (one letter followed by seven digits)"
             />
             {errors.passportNumber && <span className="field-error">{errors.passportNumber}</span>}
           </div>

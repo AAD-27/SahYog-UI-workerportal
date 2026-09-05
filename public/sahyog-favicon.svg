@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="sahyogBlue" x1="8" y1="5" x2="56" y2="59" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2872f2"/>
+      <stop offset="1" stop-color="#0750db"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="17" fill="url(#sahyogBlue)"/>
+  <path fill="#fff" d="M42.7 21.3c-2.7-2.2-6.1-3.3-10.2-3.3-7.1 0-11.7 3.6-11.7 9 0 4.7 2.9 7.2 9.7 8.7 4.5 1 5.8 1.8 5.8 3.5 0 1.8-1.7 2.9-4.6 2.9-3.4 0-6.4-1.2-9-3.7l-4.3 5.2c3.5 3.3 8 4.9 13 4.9 7.7 0 12.4-3.7 12.4-9.6 0-4.8-2.8-7.3-9.5-8.8-4.7-1.1-6-1.8-6-3.5 0-1.5 1.5-2.5 3.9-2.5 2.6 0 5 1 7.1 2.8l3.4-5.6Z"/>
+</svg>

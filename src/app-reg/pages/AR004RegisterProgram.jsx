@@ -76,7 +76,7 @@ function AR004RegisterProgram({ applicationContext, updateApplicationContext, se
 
     const loadInitial = async () => {
       try {
-        const result = await initializeProgram({ applicationNum: applicationContext.applicationNumber || '' });
+        const result = await initializeProgram({ appOrCaseNum: applicationContext.applicationNumber || '' });
         updateApplicationContext({
           applicationNumber: result.applicationNum || applicationContext.applicationNumber,
           data: { ...applicationContext.data, programs: result.programs || [] }
@@ -124,7 +124,7 @@ function AR004RegisterProgram({ applicationContext, updateApplicationContext, se
     setStatus('loading');
     setMessage('');
     try {
-      const result = await saveProgram({ applicationNum: applicationContext.applicationNumber, pageId: 'AR004', programs: selectedPrograms });
+      const result = await saveProgram({ appOrCaseNum: applicationContext.applicationNumber, pageId: 'AR004', programs: selectedPrograms });
       updateApplicationContext({
         applicationNumber: result.applicationNum || applicationContext.applicationNumber,
         status: result.status || applicationContext.status,

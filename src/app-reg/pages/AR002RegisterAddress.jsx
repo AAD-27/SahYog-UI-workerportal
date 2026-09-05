@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { initializeAddress, saveAddress } from '../../services/appRegApi';
 import { filterNumericInput, validatePinCode } from '../../utils/validation';
+import { countries, indianStatesAndUnionTerritories } from '../../utils/locationOptions';
 import ResetButton from '../../common/components/ResetButton';
 
 const initialAddress = {
@@ -47,7 +48,7 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
     const loadInitial = async () => {
       updateApplicationContext({ initAttempted: true });
       try {
-        const result = await initializeAddress({ applicationNum: applicationContext.applicationNumber || '' });
+        const result = await initializeAddress({ appOrCaseNum: applicationContext.applicationNumber || '' });
         if (!result) {
           setMessage('Unable to load address data. Please refresh.');
           return;
@@ -197,7 +198,7 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
     setStatus('loading');
     setMessage('');
     try {
-      const result = await saveAddress({ applicationNum: applicationContext.applicationNumber, pageId: 'AR002', address: form });
+      const result = await saveAddress({ appOrCaseNum: applicationContext.applicationNumber, pageId: 'AR002', address: form });
 
       updateApplicationContext({
         applicationNumber: result.applicationNum || applicationContext.applicationNumber,
@@ -276,24 +277,22 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
         <div className="field-row">
           <div className="field-group">
             <label className="field-label" htmlFor="permState">State *</label>
-            <input
+            <select
               id="permState"
               className="field-input"
               value={form.permanent.state}
               onChange={updateField('permanent', 'state')}
-              placeholder="Enter state"
-            />
+            ><option value="">Select state</option>{indianStatesAndUnionTerritories.map((state) => <option key={state} value={state}>{state}</option>)}</select>
             {errors.permanent.state && <span className="field-error">{errors.permanent.state}</span>}
           </div>
           <div className="field-group">
             <label className="field-label" htmlFor="permCountry">Country *</label>
-            <input
+            <select
               id="permCountry"
               className="field-input"
               value={form.permanent.country}
               onChange={updateField('permanent', 'country')}
-              placeholder="Enter country"
-            />
+            ><option value="">Select country</option>{countries.map((country) => <option key={country} value={country}>{country}</option>)}</select>
             {errors.permanent.country && <span className="field-error">{errors.permanent.country}</span>}
           </div>
           <div className="field-group">
@@ -371,26 +370,24 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
         <div className="field-row">
           <div className="field-group">
             <label className="field-label" htmlFor="tempState">State *</label>
-            <input
+            <select
               id="tempState"
               className="field-input"
               value={form.temporary.state}
               onChange={updateField('temporary', 'state')}
-              placeholder="Enter state"
               disabled={form.sameAsPermanent}
-            />
+            ><option value="">Select state</option>{indianStatesAndUnionTerritories.map((state) => <option key={state} value={state}>{state}</option>)}</select>
             {errors.temporary.state && !form.sameAsPermanent && <span className="field-error">{errors.temporary.state}</span>}
           </div>
           <div className="field-group">
             <label className="field-label" htmlFor="tempCountry">Country *</label>
-            <input
+            <select
               id="tempCountry"
               className="field-input"
               value={form.temporary.country}
               onChange={updateField('temporary', 'country')}
-              placeholder="Enter country"
               disabled={form.sameAsPermanent}
-            />
+            ><option value="">Select country</option>{countries.map((country) => <option key={country} value={country}>{country}</option>)}</select>
             {errors.temporary.country && !form.sameAsPermanent && <span className="field-error">{errors.temporary.country}</span>}
           </div>
           <div className="field-group">
