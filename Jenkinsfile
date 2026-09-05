@@ -56,14 +56,6 @@ pipeline {
             }
         }
 
-        // Kept as a fixed column to match AR/DC. The current Sonar policy scans Java only.
-        stage('Sonar Quality Gate') {
-            when { expression { false } }
-            steps {
-                echo 'Not applicable to this JavaScript/JSX repository.'
-            }
-        }
-
         stage('Package') {
             steps {
                 archiveArtifacts artifacts: 'build/**', fingerprint: true

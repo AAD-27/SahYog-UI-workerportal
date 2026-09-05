@@ -44,17 +44,49 @@ const evaluate = (form) => {
   const conditionSelected = form.disability || form.majorMedicalCondition;
   const hardshipSelected = conditionSelected || form.unemployed || form.soleEarner;
   const results = {
-    FSP: [maxRule(annual, 300000), ratioRule(food, monthly, .2), food === null || utility === null ? null : ratioRule(food + utility, monthly, .4), resident, noExisting(form.fspExisting)],
-    CAP: [maxRule(annual, 200000), ratioRule(total, monthly, .8), age === null ? null : age >= 18 && age <= 60, booleanRule(form.significantAssets, false), noExisting(form.capExisting), hardshipSelected ? true : null],
-    MCARE: [maxRule(annual, 500000), conditionSelected ? true : null, ratioRule(medical, monthly, .1), resident, noExisting(form.mcareExisting)],
-    CAPS: [booleanRule(form.youngChild, true), maxRule(annual, 350000), booleanRule(form.parentGuardian, true), booleanRule(form.childLivesWithYou, true), noExisting(form.capsExisting)],
-    EAP: [maxRule(annual, 300000), ratioRule(utility, monthly, .15), booleanRule(form.utilityPayer, true), resident, noExisting(form.eapExisting)]
+    FSP: [
+      ['Yearly household income is ₹3,00,000 or less', maxRule(annual, 300000)],
+      ['Food and grocery expenses are at least 20% of monthly income', ratioRule(food, monthly, .2)],
+      ['Food and utility expenses together are at least 40% of monthly income', food === null || utility === null ? null : ratioRule(food + utility, monthly, .4)],
+      ['Applicant is an Indian resident', resident],
+      ['No active or approved FSP benefit', noExisting(form.fspExisting)]
+    ],
+    CAP: [
+      ['Yearly household income is ₹2,00,000 or less', maxRule(annual, 200000)],
+      ['Total monthly expenses are at least 80% of monthly income', ratioRule(total, monthly, .8)],
+      ['Applicant is between 18 and 60 years old', age === null ? null : age >= 18 && age <= 60],
+      ['Household does not own significant financial assets', booleanRule(form.significantAssets, false)],
+      ['No active or approved CAP benefit', noExisting(form.capExisting)],
+      ['At least one hardship applies: disability, major illness, unemployment, or sole earner', hardshipSelected ? true : null]
+    ],
+    MCARE: [
+      ['Yearly household income is ₹5,00,000 or less', maxRule(annual, 500000)],
+      ['Applicant has a certified disability or major medical condition', conditionSelected ? true : null],
+      ['Medical expenses are at least 10% of monthly income', ratioRule(medical, monthly, .1)],
+      ['Applicant is an Indian resident', resident],
+      ['No active or approved MCARE benefit', noExisting(form.mcareExisting)]
+    ],
+    CAPS: [
+      ['Household includes a child aged 5 years or younger', booleanRule(form.youngChild, true)],
+      ['Yearly household income is ₹3,50,000 or less', maxRule(annual, 350000)],
+      ['Applicant is the child’s parent or legal guardian', booleanRule(form.parentGuardian, true)],
+      ['Child lives in the applicant’s household', booleanRule(form.childLivesWithYou, true)],
+      ['No active or approved CAPS benefit for the same child', noExisting(form.capsExisting)]
+    ],
+    EAP: [
+      ['Yearly household income is ₹3,00,000 or less', maxRule(annual, 300000)],
+      ['Electricity and water expenses are at least 15% of monthly income', ratioRule(utility, monthly, .15)],
+      ['Applicant is responsible for paying the utility bills', booleanRule(form.utilityPayer, true)],
+      ['Applicant is an Indian resident', resident],
+      ['No active or approved EAP benefit', noExisting(form.eapExisting)]
+    ]
   };
   return programs.map((program) => {
-    const checks = results[program.code];
+    const criteria = results[program.code].map(([label, status]) => ({ label, status }));
+    const checks = criteria.map((criterion) => criterion.status);
     const failed = checks.filter((value) => value === false).length;
     const unknown = checks.filter((value) => value === null).length;
-    return { ...program, passed: checks.length - failed - unknown, failed, unknown, total: checks.length, outcome: failed ? 'UNLIKELY' : unknown ? 'MORE_INFO' : 'LIKELY' };
+    return { ...program, criteria, passed: checks.length - failed - unknown, failed, unknown, total: checks.length, outcome: failed ? 'UNLIKELY' : unknown ? 'MORE_INFO' : 'LIKELY' };
   });
 };
 
@@ -100,7 +132,7 @@ export default function EligibilityHelper() {
 
         <div className="helper-actions"><button className="secondary-button" type="button" onClick={reset}>Reset Answers</button><button className="primary-button" type="button" onClick={() => { setShowResults(true); window.setTimeout(() => document.getElementById('helper-results')?.scrollIntoView({ behavior:'smooth' }), 0); }}>Check Eligibility</button></div>
 
-        {showResults && <section className="helper-results" id="helper-results"><div className="helper-results-heading"><span>Suggestion</span><h2>Benefits you may want to explore</h2><p>This estimate uses only the answers you entered. Missing answers are shown as information still needed.</p></div><div className="helper-result-grid">{results.map((result) => <article key={result.code} className={`helper-result ${result.outcome.toLowerCase()}`} style={{ '--result-color': result.color }}><div><span>{result.code}</span><strong>{result.name}</strong></div><h3>{result.outcome === 'LIKELY' ? 'You may qualify' : result.outcome === 'MORE_INFO' ? 'More information needed' : 'May not qualify based on these answers'}</h3><p>{result.passed} conditions matched · {result.unknown} unanswered · {result.failed} did not match</p></article>)}</div><div className="helper-warning result-warning"><span>!</span><p>Meeting these points does not guarantee approval. Your application and supporting information will be checked during Eligibility Determination.</p></div></section>}
+        {showResults && <section className="helper-results" id="helper-results"><div className="helper-results-heading"><span>Suggestion</span><h2>Benefits you may want to explore</h2><p>Each program is checked separately using the answers you entered. Review every parameter below.</p></div><div className="helper-result-grid">{results.map((result) => <article key={result.code} className={`helper-result ${result.outcome.toLowerCase()}`} style={{ '--result-color': result.color }}><div><span>{result.code}</span><strong>{result.name}</strong></div><h3>{result.outcome === 'LIKELY' ? 'You may qualify' : result.outcome === 'MORE_INFO' ? 'More information needed' : 'May not qualify based on these answers'}</h3><p className="helper-result-summary">{result.passed} matched · {result.unknown} unanswered · {result.failed} did not match</p><h4>Eligibility parameters</h4><ul className="helper-criteria">{result.criteria.map((criterion) => <li key={criterion.label} className={criterion.status === true ? 'matched' : criterion.status === false ? 'failed' : 'unknown'}><span>{criterion.status === true ? '✓' : criterion.status === false ? '×' : '?'}</span><p>{criterion.label}<small>{criterion.status === true ? 'Matched' : criterion.status === false ? 'Does not match' : 'Not answered'}</small></p></li>)}</ul></article>)}</div><div className="helper-warning result-warning"><span>!</span><p>Meeting these points does not guarantee approval. Your application and supporting information will be checked during Eligibility Determination.</p></div></section>}
       </main>
     </div>
   );
