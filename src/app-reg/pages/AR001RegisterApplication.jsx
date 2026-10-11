@@ -35,36 +35,24 @@ function AR001RegisterApplication({ applicationContext, updateApplicationContext
     const loadInitial = async () => {
       updateApplicationContext({ initAttempted: true });
 
-      if (applicationContext.applicationId !== null && applicationContext.applicationId !== undefined) {
-        const dataFromContext = {
-          firstName: applicationContext.data?.firstName || '',
-          middleName: applicationContext.data?.middleName || '',
-          lastName: applicationContext.data?.lastName || '',
-          mobileNumber: applicationContext.data?.mobileNumber || '',
-          emailAddress: applicationContext.data?.emailAddress || '',
-          applicationDate: applicationContext.applicationDate || applicationContext.data?.applicationDate || getToday()
-        };
-        setForm(dataFromContext);
-        setInitialData(dataFromContext);
-        return;
-      }
-
       try {
-        const result = await initializeApplication({ appOrCaseNum: '' });
+        const result = await initializeApplication({ appOrCaseNum: applicationContext.flowMode === 'maintain' || applicationContext.flowMode === 'citizen' ? applicationContext.applicationNumber : '' });
+        const source = result.applicationDetails || result.data || result;
         const initialFormData = {
-          firstName: result.firstName || '',
-          middleName: result.middleName || '',
-          lastName: result.lastName || '',
-          mobileNumber: result.mobileNumber || '',
-          emailAddress: result.emailAddress || '',
-          applicationDate: result.applicationDate || getToday()
+          firstName: source.firstName || '',
+          middleName: source.middleName || '',
+          lastName: source.lastName || '',
+          mobileNumber: source.mobileNumber || '',
+          emailAddress: source.emailAddress || '',
+          applicationDate: source.applicationDate || result.applicationDate || getToday()
         };
         
         updateApplicationContext({
           initAttempted: true,
-          applicationNumber: result.applicationNum || '',
-          applicationDate: result.applicationDate || getToday(),
-          status: 'Draft',
+          applicationId: result.applicationId ?? result.id ?? applicationContext.applicationId,
+          applicationNumber: result.applicationNum || result.applicationNumber || applicationContext.applicationNumber || '',
+          applicationDate: source.applicationDate || result.applicationDate || getToday(),
+          status: result.applicationStatus || result.status || applicationContext.status || 'DRAFT',
           data: result.found ? initialFormData : {}
         });
         setForm(initialFormData);

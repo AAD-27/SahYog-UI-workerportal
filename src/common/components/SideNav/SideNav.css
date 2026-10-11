@@ -47,6 +47,52 @@
   border-color: #cbd5e1;
 }
 
+@media (max-width: 1500px) {
+  .side-panel {
+    width: 270px;
+    flex-basis: 270px;
+    padding: 26px 18px;
+  }
+
+  .step-card {
+    gap: 12px;
+    padding: 14px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .side-panel {
+    width: 100%;
+    height: auto;
+    max-height: none;
+    flex: 0 0 auto;
+    padding: 14px 18px;
+    gap: 12px;
+    overflow: visible;
+  }
+
+  .side-title {
+    margin: 0;
+  }
+
+  .step-list {
+    flex-direction: row;
+    gap: 10px;
+    padding-bottom: 4px;
+    overflow-x: auto;
+  }
+
+  .step-card {
+    min-width: 180px;
+    flex: 0 0 180px;
+    border-radius: 14px;
+  }
+
+  .side-panel .status-card {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
   .side-panel {
     width: 100%;

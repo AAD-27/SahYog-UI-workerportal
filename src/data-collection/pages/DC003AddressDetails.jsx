@@ -3,7 +3,7 @@ import { initializeAddressDetails, nextAddressDetails, previousAddressDetails } 
 import { filterNumericInput, validatePinCode } from '../../utils/validation';
 import { countries, indianStatesAndUnionTerritories } from '../../utils/locationOptions';
 
-const emptyAddress = { line1: '', line2: '', city: '', state: '', country: '', pincode: '' };
+const emptyAddress = { line1: '', line2: '', city: '', state: '', country: 'India', pincode: '' };
 const initialState = { permanent: { ...emptyAddress }, temporary: { ...emptyAddress }, sameAsPermanent: false };
 
 function DC003AddressDetails({ caseContext, updateCaseContext, onContinue, onPrevious }) {
@@ -54,9 +54,8 @@ function DC003AddressDetails({ caseContext, updateCaseContext, onContinue, onPre
         setMessageType('warning');
         return;
       }
-      const raw = res?.data || res?.address || res?.addressDetails || res || null;
-      let details = null;
-      if (raw) details = raw.address ? raw.address : raw;
+      const raw = res?.data || res?.address || res?.addressDetails || null;
+      let details = raw ? (raw.address ? raw.address : raw) : form;
       if (details) {
         const normalize = (d) => {
           if (!d) return initialState;
@@ -73,7 +72,7 @@ function DC003AddressDetails({ caseContext, updateCaseContext, onContinue, onPre
               line2: d.line2 || '',
               city: d.city || '',
               state: d.state || '',
-              country: d.country || '',
+              country: d.country || 'India',
               pincode: d.pincode || ''
             },
             temporary: { ...initialState.temporary },
@@ -128,7 +127,7 @@ function DC003AddressDetails({ caseContext, updateCaseContext, onContinue, onPre
               line2: d.line2 || '',
               city: d.city || '',
               state: d.state || '',
-              country: d.country || '',
+              country: d.country || 'India',
               pincode: d.pincode || ''
             },
             temporary: { ...initialState.temporary },
@@ -190,7 +189,7 @@ function DC003AddressDetails({ caseContext, updateCaseContext, onContinue, onPre
                   line2: d.line2 || '',
                   city: d.city || '',
                   state: d.state || '',
-                  country: d.country || '',
+                  country: d.country || 'India',
                   pincode: d.pincode || ''
                 },
                 temporary: { ...initialState.temporary },

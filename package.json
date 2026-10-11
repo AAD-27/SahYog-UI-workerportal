@@ -4,12 +4,12 @@
   "private": true,
   "proxy": "http://localhost:8090",
   "scripts": {
-    "start": "cross-env PORT=4200 react-scripts start",
-    "start:react": "cross-env PORT=4200 react-scripts start",
+    "start": "node scripts/start-react.js",
+    "start:react": "node scripts/start-react.js",
     "start:server": "node server/index.js",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "build": "node node_modules/react-scripts/scripts/build.js",
+    "test": "node node_modules/react-scripts/scripts/test.js",
+    "eject": "node node_modules/react-scripts/scripts/eject.js"
   },
   "dependencies": {
     "axios": "^1.5.1",

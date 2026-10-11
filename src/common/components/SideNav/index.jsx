@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './SideNav.css';
 
-function SideNav({ steps, activeStep, onStepSelect, applicationContext, moduleTitle = 'Application Registration (AR)', restrictedSteps = {}, onRestrictedStep }) {
+function SideNav({ steps, activeStep, onStepSelect, applicationContext, moduleTitle = 'Application Registration (AR)', restrictedSteps = {}, onRestrictedStep, navigationProgress = {} }) {
   const activeIndex = steps.findIndex((step) => step.id === activeStep);
 
   return (
@@ -10,7 +10,8 @@ function SideNav({ steps, activeStep, onStepSelect, applicationContext, moduleTi
       <div className="side-title">{moduleTitle}</div>
       <div className="step-list">
         {steps.map((step, index) => {
-          const completed = index < activeIndex;
+          const isDataCollection = moduleTitle.includes('Data Collection');
+          const completed = isDataCollection ? navigationProgress[step.id]?.hasData === true : index < activeIndex;
           if (step.disabled) {
             return (
               <div key={step.id} className="step-card step-card-disabled">

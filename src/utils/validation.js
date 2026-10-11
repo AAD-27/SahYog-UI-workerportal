@@ -7,6 +7,7 @@
 export const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 export const passportPattern = /^[A-Z][0-9]{7}$/;
+const asText = (value) => value == null ? '' : String(value);
 
 /**
  * Validate individual fields based on field type and value
@@ -57,6 +58,7 @@ export const validateField = (field, value, options = {}) => {
  * Validate mobile number (10 digits)
  */
 export const validateMobileNumber = (value, options = {}) => {
+  value = asText(value);
   if (!value.trim()) {
     return options.requiredMsg || 'Mobile number is required.';
   }
@@ -73,6 +75,7 @@ export const validateMobileNumber = (value, options = {}) => {
  * Validate Aadhaar number (12 digits)
  */
 export const validateAadhar = (value, options = {}) => {
+  value = asText(value);
   if (!value.trim()) {
     return options.requiredMsg || 'Aadhaar number is required.';
   }
@@ -89,6 +92,7 @@ export const validateAadhar = (value, options = {}) => {
  * Validate PAN number (10 characters: XXXXX0000X)
  */
 export const validatePan = (value, options = {}) => {
+  value = asText(value);
   if (!value.trim()) {
     return undefined; // PAN is optional
   }
@@ -105,6 +109,7 @@ export const validatePan = (value, options = {}) => {
  * Validate Passport number (8 characters: X0000000)
  */
 export const validatePassport = (value, options = {}) => {
+  value = asText(value);
   if (!value.trim()) {
     return undefined; // Passport is optional
   }
@@ -118,6 +123,7 @@ export const validatePassport = (value, options = {}) => {
  * Validate email address
  */
 export const validateEmail = (value, options = {}) => {
+  value = asText(value);
   if (!value.trim()) {
     if (options.required) {
       return options.requiredMsg || 'Email address is required.';
@@ -134,6 +140,7 @@ export const validateEmail = (value, options = {}) => {
  * Validate application date
  */
 export const validateApplicationDate = (value, options = {}) => {
+  value = asText(value);
   if (!value.trim()) {
     return 'Application date is required.';
   }
@@ -148,6 +155,7 @@ export const validateApplicationDate = (value, options = {}) => {
  * Validate date of birth
  */
 export const validateDOB = (value, options = {}) => {
+  value = asText(value);
   if (!value.trim()) {
     return 'Date of birth is required.';
   }
@@ -162,6 +170,7 @@ export const validateDOB = (value, options = {}) => {
  * Validate PIN code
  */
 export const validatePinCode = (value, options = {}) => {
+  value = asText(value);
   if (!value.trim()) {
     return 'PIN code is required.';
   }
@@ -175,6 +184,7 @@ export const validatePinCode = (value, options = {}) => {
  * Generic text field validation
  */
 export const validateTextField = (value, options = {}) => {
+  value = asText(value);
   if (options.required && !value.trim()) {
     return options.requiredMsg || `This field is required.`;
   }
@@ -192,21 +202,21 @@ export const validateTextField = (value, options = {}) => {
  * Used in onChange handlers to prevent non-numeric input
  */
 export const filterNumericInput = (value) => {
-  return value.replace(/\D/g, '');
+  return asText(value).replace(/\D/g, '');
 };
 
 /**
  * Input filter: Allow only alphanumeric characters
  */
 export const filterAlphanumericInput = (value) => {
-  return value.replace(/[^a-zA-Z0-9]/g, '');
+  return asText(value).replace(/[^a-zA-Z0-9]/g, '');
 };
 
 /**
  * Input filter: Allow only alphabets and spaces
  */
 export const filterAlphabeticInput = (value) => {
-  return value.replace(/[^a-zA-Z\s]/g, '');
+  return asText(value).replace(/[^a-zA-Z\s]/g, '');
 };
 
 /**

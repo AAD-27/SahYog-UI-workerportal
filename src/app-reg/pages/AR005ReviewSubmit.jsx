@@ -51,10 +51,6 @@ function AR005ReviewSubmit({ applicationContext, updateApplicationContext, setAc
 
     const loadInitial = async () => {
       updateApplicationContext({ initAttempted: true });
-      if (applicationContext.applicationId && applicationContext.data && Object.keys(applicationContext.data).length > 0) {
-        return;
-      }
-
       try {
         const result = await initializeReview({ appOrCaseNum: applicationContext.applicationNumber || '' });
         if (!result) {
@@ -64,9 +60,11 @@ function AR005ReviewSubmit({ applicationContext, updateApplicationContext, setAc
 
         updateApplicationContext({
           initAttempted: true,
-          applicationNumber: result.applicationNum || applicationContext.applicationNumber,
+          applicationNumber: result.applicationNum || result.applicationNumber || applicationContext.applicationNumber,
+          status: result.applicationStatus || result.status || applicationContext.status,
           data: {
             ...applicationContext.data,
+            person: result.person || result.personDetails || result.data?.person || applicationContext.data?.person,
             address: result.addressDetails || applicationContext.data?.address,
             programs: result.programsSelected || applicationContext.data?.programs
           }

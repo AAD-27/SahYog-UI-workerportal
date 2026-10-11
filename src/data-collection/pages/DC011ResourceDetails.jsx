@@ -15,7 +15,10 @@ const resourceOptions = {
   'Other Resource': ['Inherited Asset', 'Trust/Financial Interest', 'Other Valuable Asset']
 };
 
-const emptyResource = { resourceId: null, resourceType: '', resourceDetail: '', resourceValue: '', resourceStartDate: '', resourceEndDate: '' };
+const resourceVerificationOptions = ['Bank Passbook / Statement', 'Property Ownership Document', 'Land Record', 'Vehicle Registration Certificate', 'Investment Statement', 'Insurance Policy', 'Valuation Certificate', 'Business Registration / Asset Invoice', 'Self Declaration'];
+const ownershipTypes = ['Sole Ownership', 'Joint Ownership', 'Beneficial Interest', 'Held in Trust', 'Other'];
+const encumbranceOptions = ['None', 'Loan', 'Mortgage', 'Lien', 'Other'];
+const emptyResource = { resourceId: null, resourceType: '', resourceDetail: '', resourceValue: '', resourceStartDate: '', resourceEndDate: '', resourceVerification: '', ownershipType: '', ownershipSharePercent: '', assetIdentifier: '', acquisitionDate: '', encumbranceStatus: '', outstandingLiabilityAmount: '' };
 const normalizeResource = (response) => {
   const raw = response?.data || response;
   const resource = raw?.resource || (raw?.resourceType ? raw : null);
@@ -38,6 +41,9 @@ function DC011ResourceDetails({ caseContext, updateCaseContext, onContinue, onPr
     if (!current.resourceType) nextErrors.resourceType = 'Resource type is required.';
     if (!current.resourceDetail) nextErrors.resourceDetail = 'Resource detail is required.';
     if (current.resourceValue === '' || Number(current.resourceValue) < 0) nextErrors.resourceValue = 'Enter a resource amount of zero or greater.';
+    if (!current.resourceVerification) nextErrors.resourceVerification = 'Resource verification is required.';
+    if (current.ownershipSharePercent !== '' && (Number(current.ownershipSharePercent) < 0 || Number(current.ownershipSharePercent) > 100)) nextErrors.ownershipSharePercent = 'Ownership share must be between 0 and 100.';
+    if (current.outstandingLiabilityAmount !== '' && Number(current.outstandingLiabilityAmount) < 0) nextErrors.outstandingLiabilityAmount = 'Liability amount cannot be negative.';
     if (!current.resourceStartDate) nextErrors.resourceStartDate = 'Resource start date is required.';
     if (current.resourceEndDate && current.resourceStartDate && current.resourceEndDate < current.resourceStartDate) nextErrors.resourceEndDate = 'Resource end date cannot be before the start date.';
     setErrors(nextErrors);
@@ -46,7 +52,7 @@ function DC011ResourceDetails({ caseContext, updateCaseContext, onContinue, onPr
 
   const updateField = (field) => (event) => {
     let value = event.target.value;
-    if (field === 'resourceValue') value = value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+    if (field === 'resourceValue' || field === 'outstandingLiabilityAmount' || field === 'ownershipSharePercent') value = value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
     setForm((previous) => field === 'resourceType' ? { ...previous, resourceType: value, resourceDetail: '' } : { ...previous, [field]: value });
     setErrors((previous) => field === 'resourceType' ? { ...previous, resourceType: undefined, resourceDetail: undefined } : { ...previous, [field]: undefined });
   };
@@ -60,7 +66,14 @@ function DC011ResourceDetails({ caseContext, updateCaseContext, onContinue, onPr
       resourceDetail: form.resourceDetail,
       resourceValue: Number(form.resourceValue),
       resourceStartDate: form.resourceStartDate,
-      resourceEndDate: form.resourceEndDate || ''
+      resourceEndDate: form.resourceEndDate || '',
+      resourceVerification: form.resourceVerification,
+      ownershipType: form.ownershipType,
+      ownershipSharePercent: form.ownershipSharePercent === '' ? null : Number(form.ownershipSharePercent),
+      assetIdentifier: form.assetIdentifier,
+      acquisitionDate: form.acquisitionDate || '',
+      encumbranceStatus: form.encumbranceStatus,
+      outstandingLiabilityAmount: form.outstandingLiabilityAmount === '' ? null : Number(form.outstandingLiabilityAmount)
     }
   });
 
@@ -134,6 +147,15 @@ function DC011ResourceDetails({ caseContext, updateCaseContext, onContinue, onPr
         <div className="field-group dc-resource-third"><label className="field-label" htmlFor="dcResourceValue">Resource Amount (₹) *</label><div className="dc-money-input"><span>₹</span><input id="dcResourceValue" className="field-input" inputMode="decimal" value={form.resourceValue} onChange={updateField('resourceValue')} placeholder="Enter resource amount" /></div>{errors.resourceValue && <span className="field-error">{errors.resourceValue}</span>}</div>
         <div className="field-group dc-resource-third"><label className="field-label" htmlFor="dcResourceStartDate">Resource Start Date *</label><input id="dcResourceStartDate" className="field-input" type="date" value={form.resourceStartDate} onChange={updateField('resourceStartDate')} />{errors.resourceStartDate && <span className="field-error">{errors.resourceStartDate}</span>}</div>
         <div className="field-group dc-resource-third"><label className="field-label" htmlFor="dcResourceEndDate">Resource End Date</label><input id="dcResourceEndDate" className="field-input" type="date" min={form.resourceStartDate || undefined} value={form.resourceEndDate} onChange={updateField('resourceEndDate')} /><span className="dc-field-help">Leave blank if resource is ongoing.</span>{errors.resourceEndDate && <span className="field-error">{errors.resourceEndDate}</span>}</div>
+      </div></section>
+      <section className="section-card dc-resource-detail-section"><h2 className="section-title">Resource Verification and Ownership</h2><div className="dc-resource-detail-grid">
+        <div className="field-group dc-resource-wide"><label className="field-label" htmlFor="dcResourceVerification">Resource Verification *</label><select id="dcResourceVerification" className="field-input" value={form.resourceVerification} onChange={updateField('resourceVerification')}><option value="">Select verification document</option>{resourceVerificationOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>{errors.resourceVerification && <span className="field-error">{errors.resourceVerification}</span>}</div>
+        <div className="field-group dc-resource-wide"><label className="field-label" htmlFor="dcOwnershipType">Ownership Type</label><select id="dcOwnershipType" className="field-input" value={form.ownershipType} onChange={updateField('ownershipType')}><option value="">Select ownership type</option>{ownershipTypes.map((value) => <option key={value} value={value}>{value}</option>)}</select></div>
+        <div className="field-group dc-resource-third"><label className="field-label" htmlFor="dcOwnershipShare">Ownership Share (%)</label><input id="dcOwnershipShare" className="field-input" inputMode="decimal" value={form.ownershipSharePercent} onChange={updateField('ownershipSharePercent')} placeholder="e.g. 50" />{errors.ownershipSharePercent && <span className="field-error">{errors.ownershipSharePercent}</span>}</div>
+        <div className="field-group dc-resource-third"><label className="field-label" htmlFor="dcAssetIdentifier">Asset / Account Identifier</label><input id="dcAssetIdentifier" className="field-input" value={form.assetIdentifier} onChange={updateField('assetIdentifier')} placeholder="e.g. registration or account ending" /></div>
+        <div className="field-group dc-resource-third"><label className="field-label" htmlFor="dcAcquisitionDate">Acquisition Date</label><input id="dcAcquisitionDate" className="field-input" type="date" value={form.acquisitionDate} onChange={updateField('acquisitionDate')} /></div>
+        <div className="field-group dc-resource-third"><label className="field-label" htmlFor="dcEncumbrance">Loan / Encumbrance Status</label><select id="dcEncumbrance" className="field-input" value={form.encumbranceStatus} onChange={updateField('encumbranceStatus')}><option value="">Select status</option>{encumbranceOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select></div>
+        <div className="field-group dc-resource-third"><label className="field-label" htmlFor="dcOutstandingLiability">Outstanding Liability (₹)</label><div className="dc-money-input"><span>₹</span><input id="dcOutstandingLiability" className="field-input" inputMode="decimal" value={form.outstandingLiabilityAmount} onChange={updateField('outstandingLiabilityAmount')} placeholder="Enter outstanding amount" /></div>{errors.outstandingLiabilityAmount && <span className="field-error">{errors.outstandingLiabilityAmount}</span>}</div>
       </div></section>
       <div className="dc-income-detail-navigation"><button type="button" className="secondary-button" disabled={isSubmitting} onClick={() => { setForm(initialData); setErrors({}); setMessage(''); }}>↻ Reset</button><div><button type="button" className="secondary-button" disabled={isSubmitting} onClick={handlePrevious}>← Previous</button><button type="button" className="secondary-button dc-cancel-button" disabled={isSubmitting} onClick={handleCancel}>Cancel</button><button type="button" className="primary-button" disabled={isSubmitting} onClick={handleNext}>Next →</button></div></div>
     </div>

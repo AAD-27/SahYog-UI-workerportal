@@ -17,6 +17,8 @@ import DC010ResourceSummary from './pages/DC010ResourceSummary';
 import DC011ResourceDetails from './pages/DC011ResourceDetails';
 import DC012DisabilitySummary from './pages/DC012DisabilitySummary';
 import DC014DisabilityDetails from './pages/DC014DisabilityDetails';
+import DC015DataCollectionSummary from './pages/DC015DataCollectionSummary';
+import { getDataCollectionNavigationProgress } from '../services/dataCollectionApi';
 import './dataCollection.css';
 
 const routeMap = {
@@ -33,7 +35,12 @@ const routeMap = {
   DC011: '/data-collection/resource-summary',
   DC012: '/data-collection/resource-details',
   DC013: '/data-collection/disability-summary',
-  DC014: '/data-collection/disability-details'
+  DC014: '/data-collection/disability-details',
+  DC015: '/data-collection/data-collection-summary'
+};
+
+const getCachedCaseContext = () => {
+  try { return JSON.parse(sessionStorage.getItem('sahyogActiveCase')) || {}; } catch { return {}; }
 };
 
 const restrictedDetailSteps = {
@@ -49,27 +56,49 @@ function DataCollectionLayout() {
   const location = useLocation();
   const readOnly = sessionStorage.getItem('citizenReadOnlyMode') === 'true';
   const citizenContext = (() => { try { return JSON.parse(sessionStorage.getItem('citizenApplicationContext')) || {}; } catch { return {}; } })();
-  const [caseContext, setCaseContext] = useState({ applicationNumber: readOnly ? (citizenContext.caseNumber || citizenContext.applicationNumber || '') : '', arApplicationNumber: readOnly ? (citizenContext.applicationNumber || '') : '', status: readOnly ? (citizenContext.applicationStatus || 'Registered') : 'Registered', applicant: null, applicantDetails: null });
+  const [caseContext, setCaseContext] = useState(() => {
+    const cached = getCachedCaseContext();
+    if (!readOnly && cached.applicationNumber) return cached;
+    return { applicationNumber: readOnly ? (citizenContext.caseNumber || citizenContext.applicationNumber || '') : '', arApplicationNumber: readOnly ? (citizenContext.applicationNumber || '') : '', status: readOnly ? (citizenContext.applicationStatus || 'Registered') : 'Registered', applicant: null, applicantDetails: null };
+  });
   const [navigationError, setNavigationError] = useState('');
+  const [navigationProgress, setNavigationProgress] = useState({});
   useEffect(() => {
     setNavigationError('');
   }, [location.pathname]);
   const updateCaseContext = useCallback((updates) => setCaseContext((previous) => ({ ...previous, ...updates })), []);
   useEffect(() => {
+    let mounted = true;
+    const loadNavigationProgress = async () => {
+      if (!caseContext.applicationNumber) { setNavigationProgress({}); return; }
+      try {
+        const response = await getDataCollectionNavigationProgress({ appOrCaseNum: caseContext.applicationNumber });
+        const steps = response?.steps || response?.data?.steps || [];
+        if (mounted) setNavigationProgress(Object.fromEntries(steps.map((step) => [step.pageId, step])));
+      } catch {
+        if (mounted) setNavigationProgress({});
+      }
+    };
+    loadNavigationProgress();
+    return () => { mounted = false; };
+  }, [caseContext.applicationNumber, caseContext.applicantDetails, caseContext.addressDetails, caseContext.people, caseContext.programs, caseContext.incomes, caseContext.expenses, caseContext.resources, caseContext.disabilities]);
+  useEffect(() => {
     if (caseContext.applicationNumber) sessionStorage.setItem('sahyogActiveCase', JSON.stringify(caseContext));
   }, [caseContext]);
   const activeStep = Object.keys(routeMap).find((stepId) => routeMap[stepId] === location.pathname) || 'DC001';
   const steps = useMemo(() => dataCollectionSteps.map((step) => ({ ...step, path: routeMap[step.id], disabled: !routeMap[step.id] })), []);
-  const activePage = activeStep === 'DC014'
-    ? <DC014DisabilityDetails caseContext={caseContext} updateCaseContext={updateCaseContext} onPrevious={() => navigate(routeMap.DC013)} />
+  const activePage = activeStep === 'DC015'
+    ? <DC015DataCollectionSummary caseContext={caseContext} onPrevious={() => navigate(routeMap.DC013)} onProceed={() => navigate('/eligibility-determination/run-eligibility')} />
+    : activeStep === 'DC014'
+    ? <DC014DisabilityDetails caseContext={caseContext} updateCaseContext={updateCaseContext} onPrevious={() => navigate(routeMap.DC013)} onContinue={() => { updateCaseContext({ dcSummaryReached: true }); navigate(routeMap.DC015); }} />
     : activeStep === 'DC013'
-    ? <DC012DisabilitySummary caseContext={caseContext} updateCaseContext={updateCaseContext} onPrevious={() => navigate(routeMap.DC011)} onOpenDisability={() => navigate(routeMap.DC014)} />
+    ? <DC012DisabilitySummary caseContext={caseContext} updateCaseContext={updateCaseContext} onPrevious={() => navigate(routeMap.DC011)} onContinue={() => { updateCaseContext({ dcSummaryReached: true }); navigate(routeMap.DC015); }} onOpenDisability={() => navigate(routeMap.DC014)} />
     : activeStep === 'DC012'
-    ? <DC011ResourceDetails caseContext={caseContext} updateCaseContext={updateCaseContext} onContinue={() => navigate(routeMap.DC013)} onPrevious={() => navigate(routeMap.DC011)} />
+    ? <DC011ResourceDetails caseContext={caseContext} updateCaseContext={updateCaseContext} onContinue={() => navigate(routeMap.DC011)} onPrevious={() => navigate(routeMap.DC011)} />
     : activeStep === 'DC011'
     ? <DC010ResourceSummary caseContext={caseContext} updateCaseContext={updateCaseContext} onContinue={() => navigate(routeMap.DC013)} onPrevious={() => navigate(routeMap.DC010)} onOpenResource={() => navigate(routeMap.DC012)} />
     : activeStep === 'DC010'
-    ? <DC009ExpenseDetails caseContext={caseContext} updateCaseContext={updateCaseContext} onContinue={() => navigate(routeMap.DC011)} onPrevious={() => navigate(routeMap.DC009)} />
+    ? <DC009ExpenseDetails caseContext={caseContext} updateCaseContext={updateCaseContext} onContinue={() => navigate(routeMap.DC009)} onPrevious={() => navigate(routeMap.DC009)} />
     : activeStep === 'DC009'
     ? <DC008ExpenseSummary caseContext={caseContext} updateCaseContext={updateCaseContext} onContinue={() => navigate(routeMap.DC011)} onPrevious={() => navigate(routeMap.DC007)} onOpenExpense={() => navigate(routeMap.DC010)} />
     : activeStep === 'DC008'
@@ -111,6 +140,7 @@ function DataCollectionLayout() {
           moduleTitle="Data Collection (DC)"
           restrictedSteps={restrictedDetailSteps}
           onRestrictedStep={setNavigationError}
+          navigationProgress={navigationProgress}
         />
         <main className="app-main dc-main" onClickCapture={blockReadOnlyChanges} onChangeCapture={blockReadOnlyChanges}>
           {navigationError && <div className="notification-banner warning dc-navigation-error" role="alert"><span>!</span><strong>{navigationError}</strong><button type="button" data-readonly-action="allowed" aria-label="Dismiss navigation warning" onClick={() => setNavigationError('')}>×</button></div>}

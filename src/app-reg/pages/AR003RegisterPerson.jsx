@@ -24,6 +24,10 @@ const initialState = {
   passportNumber: ''
 };
 
+const normalizePerson = (source = {}) => Object.fromEntries(
+  Object.entries(initialState).map(([field, defaultValue]) => [field, source?.[field] ?? defaultValue])
+);
+
 function AR003RegisterPerson({ applicationContext, updateApplicationContext, setActiveStep }) {
   const [form, setForm] = useState(initialState);
   const [initialData, setInitialData] = useState({});
@@ -36,7 +40,7 @@ function AR003RegisterPerson({ applicationContext, updateApplicationContext, set
     if (applicationContext.initAttempted || initializedRef.current) {
       if (applicationContext.data && Object.keys(applicationContext.data).length > 0) {
         const personFromContext = applicationContext.data?.person;
-        const personData = personFromContext || {
+        const personData = personFromContext ? normalizePerson(personFromContext) : {
           ...initialState,
           firstName: applicationContext.data?.firstName || '',
           middleName: applicationContext.data?.middleName || '',
@@ -57,14 +61,15 @@ function AR003RegisterPerson({ applicationContext, updateApplicationContext, set
           return;
         }
 
+        const personFromResult = normalizePerson(result.person || result.personDetails || result.data?.person || {});
         updateApplicationContext({
           initAttempted: true,
-          applicationNumber: result.applicationNum || applicationContext.applicationNumber,
-          data: { ...applicationContext.data, person: result.person || initialState }
+          applicationNumber: result.applicationNum || result.applicationNumber || applicationContext.applicationNumber,
+          status: result.applicationStatus || result.status || applicationContext.status,
+          data: { ...applicationContext.data, person: personFromResult }
         });
 
-        const personFromResult = result.person;
-        const personData = personFromResult || {
+        const personData = Object.values(personFromResult).some(Boolean) ? personFromResult : {
           ...initialState,
           firstName: applicationContext.data?.firstName || '',
           middleName: applicationContext.data?.middleName || '',

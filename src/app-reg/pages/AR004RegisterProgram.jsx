@@ -61,29 +61,17 @@ function AR004RegisterProgram({ applicationContext, updateApplicationContext, se
     }
     initializedRef.current = true;
 
-    if (applicationContext.applicationNumber && applicationContext.data && Object.keys(applicationContext.data).length > 0) {
-      const initial = { ...initialPrograms };
-      const savedPrograms = applicationContext.data?.programs || [];
-      savedPrograms.forEach((program) => {
-        if (initial.hasOwnProperty(program)) {
-          initial[program] = true;
-        }
-      });
-      setPrograms(initial);
-      setInitialData(initial);
-      return;
-    }
-
     const loadInitial = async () => {
       try {
         const result = await initializeProgram({ appOrCaseNum: applicationContext.applicationNumber || '' });
+        const savedPrograms = result.programs || result.programsSelected || result.data?.programs || applicationContext.data?.programs || [];
         updateApplicationContext({
-          applicationNumber: result.applicationNum || applicationContext.applicationNumber,
-          data: { ...applicationContext.data, programs: result.programs || [] }
+          applicationNumber: result.applicationNum || result.applicationNumber || applicationContext.applicationNumber,
+          status: result.applicationStatus || result.status || applicationContext.status,
+          data: { ...applicationContext.data, programs: savedPrograms }
         });
 
         const initial = { ...initialPrograms };
-        const savedPrograms = result.programs || applicationContext.data?.programs || [];
         savedPrograms.forEach((program) => {
           if (initial.hasOwnProperty(program)) {
             initial[program] = true;
@@ -105,7 +93,13 @@ function AR004RegisterProgram({ applicationContext, updateApplicationContext, se
   };
 
   const selectedPrograms = Object.keys(programs).filter((key) => programs[key]);
+  const allProgramsSelected = selectedPrograms.length === programOptions.length;
   const isValid = selectedPrograms.length > 0;
+
+  const toggleAllPrograms = () => {
+    setPrograms(Object.fromEntries(programOptions.map((program) => [program.id, !allProgramsSelected])));
+    setErrors('');
+  };
 
   const handlePrevious = () => setActiveStep('AR003');
 
@@ -153,6 +147,13 @@ function AR004RegisterProgram({ applicationContext, updateApplicationContext, se
       </div>
 
       <div className="section-card" style={{ marginTop: 24 }}>
+        <div className="program-select-all">
+          <label htmlFor="arSelectAllPrograms">
+            <input id="arSelectAllPrograms" type="checkbox" checked={allProgramsSelected} onChange={toggleAllPrograms} />
+            Select all programs
+          </label>
+          <span>{selectedPrograms.length} of {programOptions.length} selected</span>
+        </div>
         {programOptions.map((program) => (
           <div
             key={program.id}

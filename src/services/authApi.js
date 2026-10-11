@@ -17,11 +17,17 @@ const post = async (path, payload) => {
   return response.data;
 };
 
+const get = async (path) => {
+  const response = await authApi.get(path);
+  return response.data;
+};
+
 export const loginGovernmentOfficial = (payload) => post('/api/v1/auth/government-official/login', payload);
 export const loginCitizen = (payload) => post('/api/v1/auth/citizen/login', payload);
 export const registerGovernmentOfficial = (payload) => post('/api/v1/auth/government-official/register', payload);
 export const registerCitizen = (payload) => post('/api/v1/auth/citizen/register', payload);
 export const fetchCitizenApplicationContext = (payload) => post('/api/v1/auth/citizen/application-context', payload);
+export const fetchGovernmentOfficialProfile = () => get('/api/v1/auth/government-official/profile');
 
 export const getAuthErrorMessage = (error, fallback) =>
   error?.response?.data?.message || error?.response?.data?.error || error?.message || fallback;

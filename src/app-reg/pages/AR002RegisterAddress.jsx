@@ -10,7 +10,7 @@ const initialAddress = {
     line2: '',
     city: '',
     state: '',
-    country: '',
+    country: 'India',
     pincode: ''
   },
   temporary: {
@@ -18,11 +18,20 @@ const initialAddress = {
     line2: '',
     city: '',
     state: '',
-    country: '',
+    country: 'India',
     pincode: ''
   },
   sameAsPermanent: false
 };
+
+const normalizeAddressSection = (source = {}) => Object.fromEntries(
+  Object.entries(initialAddress.permanent).map(([field, defaultValue]) => [field, field === 'country' ? (source?.[field] || 'India') : (source?.[field] ?? defaultValue)])
+);
+const normalizeAddress = (source = {}) => ({
+  permanent: normalizeAddressSection(source.permanent),
+  temporary: normalizeAddressSection(source.temporary),
+  sameAsPermanent: Boolean(source.sameAsPermanent)
+});
 
 function AR002RegisterAddress({ applicationContext, updateApplicationContext, setActiveStep }) {
   const [form, setForm] = useState(initialAddress);
@@ -38,7 +47,7 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
   useEffect(() => {
     if (applicationContext.initAttempted || initializedRef.current) {
       if (applicationContext.data && Object.keys(applicationContext.data).length > 0) {
-        const addressData = applicationContext.data?.address || initialAddress;
+        const addressData = normalizeAddress(applicationContext.data?.address || initialAddress);
         setForm(addressData);
         setInitialData(addressData);
       }
@@ -54,13 +63,14 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
           return;
         }
 
+        const addressData = normalizeAddress(result.address || result.addressDetails || result.data?.address || initialAddress);
         updateApplicationContext({
           initAttempted: true,
-          applicationNumber: result.applicationNum || applicationContext.applicationNumber,
-          data: { ...applicationContext.data, address: result.address || initialAddress }
+          applicationNumber: result.applicationNum || result.applicationNumber || applicationContext.applicationNumber,
+          status: result.applicationStatus || result.status || applicationContext.status,
+          data: { ...applicationContext.data, address: addressData }
         });
 
-        const addressData = result.address || initialAddress;
         setForm(addressData);
         setInitialData(addressData);
       } catch (error) {
@@ -312,21 +322,20 @@ function AR002RegisterAddress({ applicationContext, updateApplicationContext, se
       </div>
 
       <div className="section-card">
-        <div className="section-header">
+        <div className="section-header address-section-header">
           <div>
             <h2 className="section-title">Temporary Address</h2>
             <p className="section-subtitle">Address Types • Temporary Address</p>
           </div>
-        </div>
-
-        <div className="checkbox-row">
-          <input
+          <label className="address-copy-checkbox" htmlFor="sameAsPermanent">
+            <input
             id="sameAsPermanent"
             type="checkbox"
             checked={form.sameAsPermanent}
             onChange={updateField('sameAsPermanent', 'sameAsPermanent')}
-          />
-          <label htmlFor="sameAsPermanent">Same as Permanent Address</label>
+            />
+            Same as permanent address
+          </label>
         </div>
 
         <div className="field-row">

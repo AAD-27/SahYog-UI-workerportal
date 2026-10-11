@@ -29,6 +29,9 @@ export const postContinueInitiateDC = async (applicationNum, payload = {}) => {
 export const getInitiateDC = postLookupInitiateDC;
 export const postInitiateDC = postContinueInitiateDC;
 
+// DC navigation progress — saved-data status for the left sidebar
+export const getDataCollectionNavigationProgress = async (payload = {}) => post('/api/v1/data-collection/navigation-progress', payload);
+
 // DC002 — Applicant Details
 export const initializeApplicantDetails = async (payload = {}) => post('/api/v1/applicant-details/initialize', payload);
 export const nextApplicantDetails = async (payload = {}) => post('/api/v1/applicant-details/next', payload);
@@ -40,12 +43,12 @@ export const nextAddressDetails = async (payload = {}) => post('/api/v1/address-
 export const previousAddressDetails = async (payload = {}) => post('/api/v1/address-details/previous', payload);
 
 // DC004 — Person Summary
-export const initializePersonSummary = async (payload = {}) => post('/api/v1/person-summary/initialize', payload);
-export const nextPersonSummary = async (payload = {}) => post('/api/v1/person-summary/next', payload);
-export const previousPersonSummary = async (payload = {}) => post('/api/v1/person-summary/previous', payload);
-export const addNewPerson = async (payload = {}) => post('/api/v1/person-summary/add-new', payload);
-export const editPerson = async (payload = {}) => post('/api/v1/person-summary/edit', payload);
-export const deletePerson = async (payload = {}) => post('/api/v1/person-summary/delete', payload);
+export const initializePersonSummary = async (payload = {}) => post('/api/v1/person-information/summary/initialize', payload);
+export const nextPersonSummary = async (payload = {}) => post('/api/v1/person-information/summary/next', payload);
+export const previousPersonSummary = async (payload = {}) => post('/api/v1/person-information/summary/previous', payload);
+export const addNewPerson = async (payload = {}) => post('/api/v1/person-information/summary/add-new', payload);
+export const editPerson = async (payload = {}) => post('/api/v1/person-information/summary/edit', payload);
+export const deletePerson = async (payload = {}) => post('/api/v1/person-information/summary/delete', payload);
 
 // DC005 — Person Information
 export const initializePersonInformation = async (payload = {}) => post('/api/v1/person-information/initialize', payload);

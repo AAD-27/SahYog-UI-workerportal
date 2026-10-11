@@ -68,16 +68,17 @@ function DC002IncomeDetails({ caseContext, updateCaseContext, onContinue, onPrev
         setMessageType('warning');
         return;
       }
-      const details = res?.data || res?.applicantDetails || res || null;
+      const responseDetails = res?.data || res?.applicantDetails || (res?.firstName ? res : {});
+      const details = { ...form, ...responseDetails };
       if (details) {
         const mapped = {
-          firstName: details.firstName || '',
-          middleName: details.middleName || '',
-          lastName: details.lastName || '',
-          mobileNumber: details.mobileNumber || '',
-          emailAddress: details.emailAddress || '',
-          applicationDate: details.applicationDate || getToday(),
-          isIndianResident: typeof (details.isIndianResident ?? details.indianResident) === 'boolean' ? (details.isIndianResident ?? details.indianResident) : ''
+          firstName: details.firstName || form.firstName,
+          middleName: details.middleName || form.middleName,
+          lastName: details.lastName || form.lastName,
+          mobileNumber: details.mobileNumber || form.mobileNumber,
+          emailAddress: details.emailAddress || form.emailAddress,
+          applicationDate: details.applicationDate || form.applicationDate || getToday(),
+          isIndianResident: typeof (details.isIndianResident ?? details.indianResident) === 'boolean' ? (details.isIndianResident ?? details.indianResident) : form.isIndianResident
         };
         updateCaseContext({ applicantDetails: mapped, applicant: { firstName: mapped.firstName, lastName: mapped.lastName } });
         setForm(mapped);
